@@ -21,6 +21,7 @@ public class User implements UserDetails {
     private UUID id;
 
     @NotBlank
+    @Column(unique = true)
     private String name;
 
     @NotBlank
