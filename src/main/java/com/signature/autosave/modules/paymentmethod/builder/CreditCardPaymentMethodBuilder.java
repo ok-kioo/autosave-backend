@@ -1,8 +1,8 @@
 package com.signature.autosave.modules.paymentmethod.builder;
 
+import com.mercadopago.resources.customer.CustomerCard;
 import com.signature.autosave.modules.paymentmethod.domain.entity.CreditCardPaymentMethod;
 import com.signature.autosave.modules.paymentmethod.domain.entity.PaymentMethod;
-import jakarta.validation.constraints.NotBlank;
 
 public class CreditCardPaymentMethodBuilder {
     private final CreditCardPaymentMethod instance = new CreditCardPaymentMethod();
@@ -13,25 +13,18 @@ public class CreditCardPaymentMethodBuilder {
 
     public CreditCardPaymentMethodBuilder withBase(PaymentMethod base) {
         instance.setType(base.getType());
+        instance.setFirstName(base.getFirstName());
+        instance.setLastName(base.getLastName());
+        instance.setEmail(base.getEmail());
+        instance.setDocumentNumber(base.getDocumentNumber());
         instance.setCreatedAt(base.getCreatedAt());
+        instance.setDefault(base.isDefault());
         instance.setUser(base.getUser());
         return this;
     }
 
-    public CreditCardPaymentMethodBuilder withToken(String token) {
-        instance.setToken(token);
-        return this;
-    }
-    public CreditCardPaymentMethodBuilder withCardHolderName(String cardHolderName) {
-        instance.setCardHolderName(cardHolderName);
-        return this;
-    }
-    public CreditCardPaymentMethodBuilder withLastFourDigits(int lastFourDigits) {
-        instance.setLastFourDigits(lastFourDigits);
-        return this;
-    }
-    public CreditCardPaymentMethodBuilder withIsDefault(@NotBlank boolean isDefault) {
-        instance.setDefault(isDefault);
+    public CreditCardPaymentMethodBuilder withCustomerCard(CustomerCard customerCard) {
+        instance.setCustomerCard(customerCard);
         return this;
     }
 

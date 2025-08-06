@@ -1,5 +1,6 @@
 package com.signature.autosave.modules.user.domain.entity;
 
+import com.signature.autosave.modules.user.domain.enums.SubscriptionPlan;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -24,7 +25,7 @@ public class User implements UserDetails {
 
     @NotBlank
     @Column(unique = true)
-    private String name;
+    private String nickName;
 
     @NotBlank
     @Column(unique = true)
@@ -33,9 +34,22 @@ public class User implements UserDetails {
     @NotBlank
     private String password;
 
+    @Enumerated(EnumType.STRING)
+    private SubscriptionPlan subscriptionPlan;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
+        return switch (this.subscriptionPlan) {
+            case FREE -> List.of(new SimpleGrantedAuthority(SubscriptionPlan.FREE.getPlanName()));
+
+            case BASIC -> List.of(new SimpleGrantedAuthority(SubscriptionPlan.BASIC.getPlanName()),
+                    new SimpleGrantedAuthority(SubscriptionPlan.FREE.getPlanName()));
+
+            case PREMIUM -> List.of(new SimpleGrantedAuthority(SubscriptionPlan.PREMIUM.getPlanName()),
+                    new SimpleGrantedAuthority(SubscriptionPlan.BASIC.getPlanName()),
+                    new SimpleGrantedAuthority(SubscriptionPlan.FREE.getPlanName()));
+
+        };
     }
 
     @Override

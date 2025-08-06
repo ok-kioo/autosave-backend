@@ -1,6 +1,6 @@
 package com.signature.autosave.modules.auth.service;
 
-import com.signature.autosave.infra.components.jwt.JWTProvider;
+import com.signature.autosave.infra.components.jwt.JWTComponent;
 import com.signature.autosave.modules.auth.dto.AuthResponseDTO;
 import com.signature.autosave.modules.auth.dto.LoginDTO;
 import com.signature.autosave.modules.user.dto.UserResponseDTO;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 public class AuthService implements UserDetailsService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final JWTProvider jwtProvider;
+    private final JWTComponent jwtComponent;
 
     public AuthResponseDTO login(LoginDTO user) {
         User existingUser = userRepository.findByEmail(user.getEmail())
@@ -28,8 +28,8 @@ public class AuthService implements UserDetailsService {
             throw new IllegalArgumentException("Senha incorreta");
         }
 
-        String token = jwtProvider.generateToken(existingUser);
-        UserResponseDTO userResponse = new UserResponseDTO(existingUser.getId(), existingUser.getName(), existingUser.getEmail());
+        String token = jwtComponent.generateToken(existingUser);
+        UserResponseDTO userResponse = new UserResponseDTO(existingUser.getId(), existingUser.getNickName(), existingUser.getEmail(), existingUser.getSubscriptionPlan());
 
         return new AuthResponseDTO( token, userResponse);
     }

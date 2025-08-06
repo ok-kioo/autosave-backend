@@ -8,15 +8,25 @@ import lombok.Getter;
 @Getter
 public class RegisterPaymentMethodDTO {
     @NotBlank
+    private String firstName;
+
+    @NotBlank
+    private String lastName;
+
+    @NotBlank
+    private String email;
+
+    @NotBlank
+    private String documentNumber;
+
+    @NotBlank
     private PaymentMethodType type;
 
     private String token;
 
-    private String cardHolderName;
+    private String issuerId;
 
-    private int lastFourDigits;
-
-    private String pixKey;
+    private String paymentMethodId;
 
     @JsonProperty("isDefault")
     private boolean isDefault;

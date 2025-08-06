@@ -1,9 +1,10 @@
 package com.signature.autosave.web.controller;
 
-import com.signature.autosave.modules.user.service.UserService;
 import com.signature.autosave.modules.user.dto.*;
+import com.signature.autosave.modules.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,14 +37,26 @@ public class UserController {
         }
     }
 
-    @GetMapping("/users")
-    public ResponseEntity<?> list(@RequestBody @Valid ListUserDTO users, BindingResult validation) {
+    @GetMapping("/users/{id}")
+    public ResponseEntity<?> list(@PathVariable("id") UUID id) {
+
+        try{
+            List<UserResponseDTO> result = userService.list(id);
+            return ResponseEntity.status(HttpStatus.FOUND).body(result);
+
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/users/names")
+    public ResponseEntity<?> listByNames(@RequestBody @Valid ListUserDTO users, BindingResult validation, Pageable pageable) {
         if (validation.hasErrors()) {
             return ResponseEntity.badRequest().body(Map.of("error", validation.getFieldErrors()));
         }
 
         try{
-            List<UserResponseDTO> result = userService.listUser(users);
+            List<UserResponseDTO> result = userService.listUsersByNames(users, pageable);
             return ResponseEntity.status(HttpStatus.FOUND).body(result);
 
         }catch (Exception e) {
@@ -78,7 +91,7 @@ public class UserController {
 
         try{
             userService.deleteUser(deleteUser, id, userDetails);
-            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("User deleted successfully");
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).body("Usuário deletado com sucesso");
 
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));

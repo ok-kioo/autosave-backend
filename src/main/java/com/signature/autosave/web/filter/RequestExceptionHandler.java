@@ -15,6 +15,7 @@ public class RequestExceptionHandler {
                 .badRequest()
                 .body(Map.of("Erro ao processar JSON", ex.getMostSpecificCause().getMessage()));
     }
+
 }
 
 

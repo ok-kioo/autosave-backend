@@ -1,6 +1,6 @@
 package com.signature.autosave.modules.paymentmethod.domain.entity;
 
-import jakarta.persistence.Column;
+import com.mercadopago.resources.customer.CustomerCard;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
@@ -13,14 +13,5 @@ import lombok.Setter;
 @Setter
 public class CreditCardPaymentMethod extends PaymentMethod {
     @NotBlank
-    private String token;
-
-    @NotBlank
-    private String cardHolderName;
-
-    @NotBlank
-    private int lastFourDigits;
-
-    @Column(name = "is_default")
-    private boolean isDefault;
+    private CustomerCard customerCard;
 }

@@ -1,20 +1,35 @@
 package com.signature.autosave.modules.paymentmethod.dto;
 
 import com.signature.autosave.modules.paymentmethod.domain.enums.PaymentMethodType;
+import com.signature.autosave.modules.user.domain.entity.User;
 import lombok.Getter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
 public class PaymentMethodResponseDTO {
     private final UUID id;
     private final PaymentMethodType type;
-    private final LocalDate createdAt;
+    private final String firstName;
+    private final String lastName;
+    private final String email;
+    private final String documentNumber;
+    private final LocalDateTime createdAt;
+    private final boolean isDefault;
+    private final User user;
 
-    public PaymentMethodResponseDTO(UUID id, PaymentMethodType type, LocalDate createdAt) {
+    public PaymentMethodResponseDTO(UUID id, PaymentMethodType type, String firstName, String lastName,
+                                    String email, String documentNumber, LocalDateTime createdAt,
+                                    boolean isDefault, User user) {
         this.id = id;
         this.type = type;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.documentNumber = documentNumber;
         this.createdAt = createdAt;
+        this.isDefault = isDefault;
+        this.user = user;
     }
 }

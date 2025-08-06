@@ -3,8 +3,10 @@ package com.signature.autosave.modules.user.builder;
 import com.signature.autosave.modules.user.domain.entity.User;
 import jakarta.validation.constraints.NotBlank;
 
+import static com.signature.autosave.modules.user.domain.enums.SubscriptionPlan.FREE;
+
 public class UserBuilder {
-    private String name;
+    private String nickName;
     private String email;
     private String password;
 
@@ -12,8 +14,8 @@ public class UserBuilder {
         return new UserBuilder();
     }
 
-    public UserBuilder withName(@NotBlank String name) {
-        this.name = name;
+    public UserBuilder withNickName(@NotBlank String nickName) {
+        this.nickName = nickName;
         return this;
     }
 
@@ -29,9 +31,10 @@ public class UserBuilder {
 
     public User build() {
         User user = new User();
-        user.setName(this.name);
+        user.setNickName(this.nickName);
         user.setEmail(this.email);
         user.setPassword(this.password);
+        user.setSubscriptionPlan(FREE);
         return user;
     }
 }

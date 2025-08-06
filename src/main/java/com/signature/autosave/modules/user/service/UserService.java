@@ -1,10 +1,11 @@
 package com.signature.autosave.modules.user.service;
 
 import com.signature.autosave.modules.user.builder.UserBuilder;
-import com.signature.autosave.modules.user.dto.*;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
+import com.signature.autosave.modules.user.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,73 +21,73 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserResponseDTO createUser(RegisterDTO newUser){
-        userRepository.findByEmail(newUser.getEmail()).ifPresent(user -> {
-            throw new IllegalArgumentException("Email already exists");
+    public UserResponseDTO createUser(RegisterDTO registerDTO){
+        userRepository.findByEmail(registerDTO.getEmail()).ifPresent(user -> {
+            throw new IllegalArgumentException("Email já cadastrado");
         });
 
-        String encodedPassword = passwordEncoder.encode(newUser.getPassword());
+        String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
 
         User user = UserBuilder.builder()
-                    .withName(newUser.getName())
-                    .withEmail(newUser.getEmail())
+                    .withNickName(registerDTO.getName())
+                    .withEmail(registerDTO.getEmail())
                     .withPassword(encodedPassword)
                     .build();
 
         userRepository.save(user);
 
-        return new UserResponseDTO(user.getId(), user.getName(), user.getEmail());
+        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan());
     }
 
     @Transactional(readOnly = true)
-    public List<UserResponseDTO> listUser(ListUserDTO users){
-        List<UserResponseDTO> userResponses;
-
-        if(users.getNames() == null){
-            userResponses = userRepository.findAll().stream()
-                    .map(user -> new UserResponseDTO(user.getId(), user.getName(), user.getEmail()))
-                    .toList();
-        } else{
-            userResponses = userRepository.findUsersByNameIn(users.getNames()).stream()
-                    .map(user -> new UserResponseDTO(user.getId(), user.getName(), user.getEmail()))
-                    .toList();
-        }
-
-        return userResponses;
+    public List<UserResponseDTO> list(UUID id){
+        return userRepository.findById(id).stream()
+                .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan()))
+                .toList();
     }
 
-    public UserResponseDTO updateUser(UpdateUserDTO updatedUser, UUID id, UserDetails userDetails) {
+    @Transactional(readOnly = true)
+    public List<UserResponseDTO> listUsersByNames(ListUserDTO listUserDTO, Pageable pageable) {
+        return userRepository.findUsersByNameIn(listUserDTO.getNames(), pageable).stream()
+                    .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan()))
+                    .toList();
+    }
+
+    public UserResponseDTO updateUser(UpdateUserDTO updateUserDTO, UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         if (!user.getId().equals(id)) {
-            throw new IllegalArgumentException("User ID does not match the authenticated user");
+            throw new IllegalArgumentException("Id do usuário não corresponde ao usuário autenticado");
         }
 
-        Optional.ofNullable(updatedUser.getEmail())
+        Optional.ofNullable(updateUserDTO.getEmail())
                 .ifPresent(user::setEmail);
 
-        Optional.ofNullable(updatedUser.getUsername())
-                .ifPresent(user::setName);
+        Optional.ofNullable(updateUserDTO.getUsername())
+                .ifPresent(user::setNickName);
 
-        Optional.ofNullable(updatedUser.getPassword())
+        Optional.ofNullable(updateUserDTO.getPassword())
                 .ifPresent(password -> user.setPassword(passwordEncoder.encode(password)));
+
+        Optional.ofNullable(updateUserDTO.getSubscriptionPlan())
+                .ifPresent(user::setSubscriptionPlan);
 
         userRepository.save(user);
 
-        return new UserResponseDTO(user.getId(), user.getName(), user.getEmail());
+        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan());
     }
 
-    public void deleteUser(DeleteUserDTO deleteUser, UUID id, UserDetails userDetails) {
+    public void deleteUser(DeleteUserDTO deleteUserDTO, UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         if (!user.getId().equals(id)) {
-            throw new IllegalArgumentException("User ID does not match the authenticated user");
+            throw new IllegalArgumentException("Id do usuário não corresponde ao usuário autenticado");
         }
 
-        if(!user.getPassword().equals(deleteUser.getPassword())){
-            throw new IllegalArgumentException("Password does not match");
+        if(!user.getPassword().equals(deleteUserDTO.getPassword())){
+            throw new IllegalArgumentException("Senha incorreta");
         }
 
         userRepository.delete(user);

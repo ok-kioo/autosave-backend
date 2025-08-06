@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -26,7 +26,22 @@ public class PaymentMethod {
     private PaymentMethodType type;
 
     @NotBlank
-    private LocalDate createdAt;
+    private String firstName;
+
+    @NotBlank
+    private String lastName;
+
+    @NotBlank
+    private String email;
+
+    @NotBlank
+    private String documentNumber;
+
+    @NotBlank
+    private LocalDateTime createdAt;
+
+    @Column(name = "is_default")
+    private boolean isDefault;
 
     @NotBlank
     @ManyToOne
