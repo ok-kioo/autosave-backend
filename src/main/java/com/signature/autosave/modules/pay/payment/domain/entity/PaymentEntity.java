@@ -12,6 +12,7 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "payment")
+@Inheritance(strategy = InheritanceType.JOINED)
 public class PaymentEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)

@@ -48,7 +48,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public List<UserResponseDTO> listUsersByNames(ListUserDTO listUserDTO, Pageable pageable) {
-        return userRepository.findUsersByNameIn(listUserDTO.getNames(), pageable).stream()
+        return userRepository.findUsersByNickNameIn(listUserDTO.getNames(), pageable).stream()
                     .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan()))
                     .toList();
     }

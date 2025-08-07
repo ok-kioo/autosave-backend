@@ -8,9 +8,6 @@ import lombok.Getter;
 @Getter
 public class LoginDTO {
     @NotBlank
-    private String name;
-
-    @NotBlank
     @Email
     private String email;
 
