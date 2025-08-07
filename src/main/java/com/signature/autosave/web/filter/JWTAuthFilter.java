@@ -1,6 +1,6 @@
 package com.signature.autosave.web.filter;
 
-import com.signature.autosave.infra.components.jwt.JWTComponent;
+import com.signature.autosave.infra.components.jwt.IAuthComponent;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +20,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class JWTAuthFilter extends OncePerRequestFilter {
 
-    private final JWTComponent tokenProvider;
+    private final IAuthComponent tokenProvider;
     private final UserDetailsService userDetailsService;
 
     @Override

@@ -11,7 +11,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
-public class JWTComponent {
+public class JWTComponent implements IAuthComponent{
     private final SecretKey JWT_SECRET = Keys.hmacShaKeyFor(System.getenv("JWT_TOKEN_SECRET").getBytes());
 
     public String generateToken(UserDetails userDetails) {

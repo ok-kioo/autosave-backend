@@ -8,6 +8,9 @@ import jakarta.validation.constraints.NotBlank;
 public class PixPaymentMethodBuilder {
     private final PixPaymentMethod instance = new PixPaymentMethod();
 
+    private PixPaymentMethodBuilder() {
+    }
+
     public static PixPaymentMethodBuilder builder() {
         return new PixPaymentMethodBuilder();
     }

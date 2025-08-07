@@ -2,7 +2,7 @@ package com.signature.autosave.web.controller;
 
 import com.mercadopago.net.HttpStatus;
 import com.signature.autosave.modules.pay.payment.dto.CreatePaymentDTO;
-import com.signature.autosave.modules.pay.payment.dto.PaymentResponseDTO;
+import com.signature.autosave.modules.pay.payment.dto.PaymentEntityResponseDTO;
 import com.signature.autosave.modules.pay.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +32,7 @@ public class PaymentController {
 
         try{
             String BASIC_PLAN = "basic";
-            PaymentResponseDTO result = paymentService.createPayment(createPaymentDTO, userDetails, idempotencyKey, BASIC_PLAN);
+            PaymentEntityResponseDTO result = paymentService.createPayment(createPaymentDTO, userDetails, idempotencyKey, BASIC_PLAN);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(result);
 
@@ -51,7 +51,7 @@ public class PaymentController {
 
         try{
             String PREMIUM_PLAN = "premium";
-            PaymentResponseDTO result = paymentService.createPayment(createPaymentDTO, userDetails, idempotencyKey, PREMIUM_PLAN);
+            PaymentEntityResponseDTO result = paymentService.createPayment(createPaymentDTO, userDetails, idempotencyKey, PREMIUM_PLAN);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(result);
 
@@ -64,7 +64,7 @@ public class PaymentController {
     public ResponseEntity<?> listPayment(@PathVariable("id") UUID id,
                                          @AuthenticationPrincipal UserDetails userDetails) {
         try{
-            PaymentResponseDTO result = paymentService.listPayment(id, userDetails);
+            PaymentEntityResponseDTO result = paymentService.listPayment(id, userDetails);
 
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 
@@ -76,7 +76,7 @@ public class PaymentController {
     @GetMapping("payments")
     public ResponseEntity<?> listPayments(@AuthenticationPrincipal UserDetails userDetails) {
         try{
-            List<PaymentResponseDTO> result = paymentService.listPayments(userDetails);
+            List<PaymentEntityResponseDTO> result = paymentService.listPayments(userDetails);
 
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 

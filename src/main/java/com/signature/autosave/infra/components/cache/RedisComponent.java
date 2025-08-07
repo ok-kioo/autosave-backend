@@ -8,7 +8,7 @@ import redis.clients.jedis.JedisClientConfig;
 import redis.clients.jedis.UnifiedJedis;
 
 @Component
-public class RedisComponent {
+public class RedisComponent implements ICacheComponent{
     private final UnifiedJedis jedis = run();
 
     private UnifiedJedis run() {
@@ -23,6 +23,7 @@ public class RedisComponent {
         );
     }
 
+    @Override
     public String processIdempotentRequest(String key) {
         String redisKey = "idempotency:" + key;
 

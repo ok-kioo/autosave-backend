@@ -7,6 +7,9 @@ import com.signature.autosave.modules.pay.paymentmethod.domain.entity.PaymentMet
 public class CreditCardPaymentMethodBuilder {
     private final CreditCardPaymentMethod instance = new CreditCardPaymentMethod();
 
+    private CreditCardPaymentMethodBuilder() {
+    }
+
     public static CreditCardPaymentMethodBuilder builder() {
         return new CreditCardPaymentMethodBuilder();
     }

@@ -10,6 +10,9 @@ public class UserBuilder {
     private String email;
     private String password;
 
+    private UserBuilder() {
+    }
+
     public static UserBuilder builder() {
         return new UserBuilder();
     }

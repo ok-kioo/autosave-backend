@@ -47,7 +47,7 @@ import static org.apache.commons.io.function.Uncheck.getAsLong;
 
 @Component
 @RequiredArgsConstructor
-public class MPComponent {
+public class MPComponent implements IIntermediationComponent{
     private final CreditCardPaymentMethodRepository creditCardPaymentMethodRepository;
     private final PixPaymentMethodRepository pixPaymentMethodRepository;
 
@@ -55,6 +55,7 @@ public class MPComponent {
         MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
     }
 
+    @Override
     public Payment createPixPayment(CreatePaymentDTO createPaymentDTO, String idempotencyKey) throws MPException, MPApiException {
         PixPaymentMethod pix = pixPaymentMethodRepository.findById(createPaymentDTO.getPaymentMethod().getId())
                 .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
@@ -87,6 +88,7 @@ public class MPComponent {
         return client.create(paymentCreateRequest, requestOptions);
     }
 
+    @Override
     public Payment createCreditCardPayment(CreatePaymentDTO createPaymentDTO, String idempotencyKey) throws MPException, MPApiException {
         CreditCardPaymentMethod creditCard = creditCardPaymentMethodRepository
                 .findById(createPaymentDTO.getPaymentMethod().getId())
@@ -124,6 +126,7 @@ public class MPComponent {
         return client.create(paymentCreateRequest, requestOptions);
     }
 
+    @Override
     public Subscription createSubscriptionPlan(String paymentType, String paymentMethod, PaymentMethod paymentMethodEntity, CreatePaymentDTO createPaymentDTO, String idempotencyKey) throws MPException, MPApiException {
         HttpResponse<JsonNode> planResponse = Unirest.post("https://api.mercadopago.com/preapproval_plan")
                 .header("Content-Type", "application/json")
@@ -211,6 +214,7 @@ public class MPComponent {
         return new CardTokenClient().create(cardTokenRequest);
     }
 
+    @Override
     public Customer createCustomer(RegisterPaymentMethodDTO registerPaymentMethodDTO) throws MPException, MPApiException {
         CustomerRequest customerRequest = CustomerRequest.builder()
                 .firstName(registerPaymentMethodDTO.getFirstName())
@@ -221,6 +225,7 @@ public class MPComponent {
         return new CustomerClient().create(customerRequest);
     }
 
+    @Override
     public CustomerCard saveCreditCard(RegisterPaymentMethodDTO registerPaymentMethodDTO, Customer customer) throws MPException, MPApiException {
         CustomerCardIssuer issuer = CustomerCardIssuer.builder()
                 .id(registerPaymentMethodDTO.getIssuerId())

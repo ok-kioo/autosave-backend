@@ -4,9 +4,8 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.customer.Customer;
 import com.mercadopago.resources.customer.CustomerCard;
-import com.signature.autosave.infra.components.intermediation.MPComponent;
+import com.signature.autosave.infra.components.intermediation.IIntermediationComponent;
 import com.signature.autosave.modules.pay.paymentmethod.builder.CreditCardPaymentMethodBuilder;
-import com.signature.autosave.modules.pay.paymentmethod.dto.*;
 import com.signature.autosave.modules.pay.paymentmethod.builder.PaymentMethodBuilder;
 import com.signature.autosave.modules.pay.paymentmethod.builder.PixPaymentMethodBuilder;
 import com.signature.autosave.modules.pay.paymentmethod.domain.entity.CreditCardPaymentMethod;
@@ -15,6 +14,7 @@ import com.signature.autosave.modules.pay.paymentmethod.domain.entity.PixPayment
 import com.signature.autosave.modules.pay.paymentmethod.domain.repository.CreditCardPaymentMethodRepository;
 import com.signature.autosave.modules.pay.paymentmethod.domain.repository.PaymentMethodRepository;
 import com.signature.autosave.modules.pay.paymentmethod.domain.repository.PixPaymentMethodRepository;
+import com.signature.autosave.modules.pay.paymentmethod.dto.*;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +33,7 @@ public class PaymentMethodService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final CreditCardPaymentMethodRepository creditMethodRepository;
     private final PixPaymentMethodRepository pixMethodRepository;
-    private final MPComponent mpComponent;
+    private final IIntermediationComponent mpComponent;
 
     @Transactional
     public PaymentMethodResponseDTO createPaymentMethod(RegisterPaymentMethodDTO registerPaymentMethod, UserDetails userDetails) throws MPException, MPApiException {

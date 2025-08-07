@@ -3,13 +3,16 @@ package com.signature.autosave.modules.pay.payment.service;
 import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.payment.Payment;
-import com.signature.autosave.infra.components.cache.RedisComponent;
-import com.signature.autosave.infra.components.intermediation.MPComponent;
+import com.signature.autosave.infra.components.cache.ICacheComponent;
+import com.signature.autosave.infra.components.intermediation.IIntermediationComponent;
+import com.signature.autosave.modules.pay.payment.builder.PaymentEntityBuilder;
+import com.signature.autosave.modules.pay.payment.builder.PaymentResponseBuilder;
+import com.signature.autosave.modules.pay.payment.builder.SubscriptionResponseBuilder;
 import com.signature.autosave.modules.pay.payment.domain.entity.PaymentEntity;
+import com.signature.autosave.modules.pay.payment.domain.entity.PaymentResponse;
+import com.signature.autosave.modules.pay.payment.domain.entity.SubscriptionResponse;
 import com.signature.autosave.modules.pay.payment.domain.repository.PaymentRepository;
-import com.signature.autosave.modules.pay.payment.dto.CreatePaymentDTO;
-import com.signature.autosave.modules.pay.payment.dto.PaymentResponseDTO;
-import com.signature.autosave.modules.pay.payment.dto.Subscription;
+import com.signature.autosave.modules.pay.payment.dto.*;
 import com.signature.autosave.modules.pay.paymentmethod.domain.entity.CreditCardPaymentMethod;
 import com.signature.autosave.modules.pay.paymentmethod.domain.entity.PixPaymentMethod;
 import com.signature.autosave.modules.pay.paymentmethod.domain.repository.CreditCardPaymentMethodRepository;
@@ -27,14 +30,14 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
-    private final RedisComponent redisComponent;
-    private final MPComponent mpComponent;
+    private final ICacheComponent redisComponent;
+    private final IIntermediationComponent mpComponent;
     private final UserRepository userRepository;
     private final PixPaymentMethodRepository pixMethod;
     private final CreditCardPaymentMethodRepository creditMethod;
     private final PaymentRepository paymentRepository;
 
-    public PaymentResponseDTO createPayment(CreatePaymentDTO createPaymentDTO, UserDetails userDetails, String idempotencyKey, String plan) throws MPException, MPApiException {
+    public PaymentEntityResponseDTO createPayment(CreatePaymentDTO createPaymentDTO, UserDetails userDetails, String idempotencyKey, String plan) throws MPException, MPApiException {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -55,7 +58,7 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public PaymentResponseDTO listPayment(UUID id, UserDetails userDetails) {
+    public PaymentEntityResponseDTO listPayment(UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -67,27 +70,18 @@ public class PaymentService {
 
         }
 
-        return new PaymentResponseDTO(
-                paymentEntity.getId(),
-                paymentEntity.getPaymentMethod(),
-                paymentEntity.getMpPayment(),
-                paymentEntity.getSubscriptionResponse()
-        );
+        return payResponseBuild(paymentEntity);
     }
 
     @Transactional(readOnly = true)
-    public List<PaymentResponseDTO> listPayments(UserDetails userDetails) {
+    public List<PaymentEntityResponseDTO> listPayments(UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         return paymentRepository.findAllByUserId(user.getId())
                 .stream()
-                .map(paymentEntity -> new PaymentResponseDTO(
-                        paymentEntity.getId(),
-                        paymentEntity.getPaymentMethod(),
-                        paymentEntity.getMpPayment(),
-                        paymentEntity.getSubscriptionResponse()
-                ))
+                .map(this::payResponseBuild
+                )
                 .toList();
     }
 
@@ -99,16 +93,17 @@ public class PaymentService {
 
                 Payment pixPayment = mpComponent.createPixPayment(createPaymentDTO, idempotencyKey);
 
-                PaymentEntity pixPaymentResult = new PaymentEntity();
-                pixPaymentResult.setPaymentMethod(createPaymentDTO.getPaymentMethod());
-                pixPaymentResult.setMpPayment(pixPayment);
+                PaymentResponse pixPaymentResult = PaymentResponseBuilder.builder()
+                        .withBase(basePaymentEntityResponseBuild(createPaymentDTO))
+                        .withPaymentResponse(pixPayment)
+                        .build();
+
                 paymentRepository.save(pixPaymentResult);
 
                 return new PaymentResponseDTO(
                         pixPaymentResult.getId(),
                         createPaymentDTO.getPaymentMethod(),
-                        pixPayment,
-                        null
+                        pixPayment
                 );
 
             case CREDIT_CARD:
@@ -117,22 +112,23 @@ public class PaymentService {
 
                 Payment creditCardPayment = mpComponent.createCreditCardPayment(createPaymentDTO, idempotencyKey);
 
-                PaymentEntity creditCardPaymentResult = new PaymentEntity();
-                creditCardPaymentResult.setPaymentMethod(createPaymentDTO.getPaymentMethod());
-                creditCardPaymentResult.setMpPayment(creditCardPayment);
+                PaymentResponse creditCardPaymentResult = PaymentResponseBuilder.builder()
+                        .withBase(basePaymentEntityResponseBuild(createPaymentDTO))
+                        .withPaymentResponse(creditCardPayment)
+                        .build();
+
                 paymentRepository.save(creditCardPaymentResult);
 
                 return new PaymentResponseDTO(
                         creditCardPaymentResult.getId(),
                         createPaymentDTO.getPaymentMethod(),
-                        creditCardPayment,
-                        null
+                        creditCardPayment
                 );
         }
         throw new RuntimeException("Tipo de método de pagamento não suportado");
     }
 
-    private PaymentResponseDTO createBasicPayment(CreatePaymentDTO createPaymentDTO, String idempotencyKey) throws MPException, MPApiException {
+    private SubscriptionResponseDTO createBasicPayment(CreatePaymentDTO createPaymentDTO, String idempotencyKey) throws MPException, MPApiException {
         switch (createPaymentDTO.getPaymentMethod().getType()) {
             case PIX:
                 PixPaymentMethod pix = pixMethod.findById(createPaymentDTO.getPaymentMethod().getId())
@@ -140,15 +136,16 @@ public class PaymentService {
 
                 Subscription pixPayment = mpComponent.createSubscriptionPlan("pix", "pix", pix, createPaymentDTO, idempotencyKey);
 
-                PaymentEntity pixPaymentResult = new PaymentEntity();
-                pixPaymentResult.setPaymentMethod(createPaymentDTO.getPaymentMethod());
-                pixPaymentResult.setSubscriptionResponse(pixPayment);
+                SubscriptionResponse pixPaymentResult = SubscriptionResponseBuilder.builder()
+                        .withBase(basePaymentEntityResponseBuild(createPaymentDTO))
+                        .withSubscriptionResponse(pixPayment)
+                        .build();
+
                 paymentRepository.save(pixPaymentResult);
 
-                return new PaymentResponseDTO(
+                return new SubscriptionResponseDTO(
                         pixPaymentResult.getId(),
                         createPaymentDTO.getPaymentMethod(),
-                        null,
                         pixPayment
                 );
 
@@ -158,21 +155,44 @@ public class PaymentService {
 
                 Subscription creditCardPayment = mpComponent.createSubscriptionPlan("credit_card", creditCard.getCustomerCard().getIssuer().getName(), creditCard, createPaymentDTO, idempotencyKey);
 
-                PaymentEntity creditCardPaymentResult = new PaymentEntity();
-                creditCardPaymentResult.setPaymentMethod(createPaymentDTO.getPaymentMethod());
-                creditCardPaymentResult.setSubscriptionResponse(creditCardPayment);
+                SubscriptionResponse creditCardPaymentResult = SubscriptionResponseBuilder.builder()
+                        .withBase(basePaymentEntityResponseBuild(createPaymentDTO))
+                        .withSubscriptionResponse(creditCardPayment)
+                        .build();
+
                 paymentRepository.save(creditCardPaymentResult);
 
-                return new PaymentResponseDTO(
+                return new SubscriptionResponseDTO(
                         creditCardPaymentResult.getId(),
                         createPaymentDTO.getPaymentMethod(),
-                        null,
                         creditCardPayment
                 );
         }
         throw new RuntimeException("Tipo de método de pagamento não suportado");
     }
 
+    public PaymentEntityResponseDTO payResponseBuild(PaymentEntity paymentEntity){
+        if (paymentEntity instanceof PaymentResponse paymentResponse) {
+            return new PaymentResponseDTO(
+                    paymentEntity.getId(),
+                    paymentEntity.getPaymentMethod(),
+                    paymentResponse.getPaymentResponse()
+            );
+        } else if (paymentEntity instanceof SubscriptionResponse subscriptionResponse) {
+            return new SubscriptionResponseDTO(
+                    paymentEntity.getId(),
+                    paymentEntity.getPaymentMethod(),
+                    subscriptionResponse.getSubscriptionResponse()
+            );
+        }
+        throw new IllegalArgumentException("Tipo desconhecido: " + paymentEntity.getClass());
+    }
+
+    private PaymentEntity basePaymentEntityResponseBuild(CreatePaymentDTO createPaymentDTO) {
+        return PaymentEntityBuilder.builder()
+                .withPaymentMethod(createPaymentDTO.getPaymentMethod())
+                .build();
+    }
 
 }
 

@@ -1,11 +1,11 @@
 package com.signature.autosave.modules.auth.service;
 
-import com.signature.autosave.infra.components.jwt.JWTComponent;
+import com.signature.autosave.infra.components.jwt.IAuthComponent;
 import com.signature.autosave.modules.auth.dto.AuthResponseDTO;
 import com.signature.autosave.modules.auth.dto.LoginDTO;
-import com.signature.autosave.modules.user.dto.UserResponseDTO;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
+import com.signature.autosave.modules.user.dto.UserResponseDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 public class AuthService implements UserDetailsService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
-    private final JWTComponent jwtComponent;
+    private final IAuthComponent jwtComponent;
 
     public AuthResponseDTO login(LoginDTO user) {
         User existingUser = userRepository.findByEmail(user.getEmail())

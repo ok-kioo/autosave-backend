@@ -18,6 +18,9 @@ public class PaymentMethodBuilder {
     private boolean isDefault;
     private User user;
 
+    private PaymentMethodBuilder() {
+    }
+
     public static PaymentMethodBuilder builder() {
         return new PaymentMethodBuilder();
     }
