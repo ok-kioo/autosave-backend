@@ -16,6 +16,13 @@ public class RequestExceptionHandler {
                 .body(Map.of("Erro ao processar JSON", ex.getMostSpecificCause().getMessage()));
     }
 
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map> handleGeneralException(Exception ex) {
+        return ResponseEntity
+                .badRequest()
+                .body(Map.of("Error", ex.getMessage()));
+    }
+
 }
 
 
