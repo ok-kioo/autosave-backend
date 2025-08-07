@@ -1,9 +1,9 @@
 package com.signature.autosave.web.controller;
 
-import com.signature.autosave.modules.paymentmethod.dto.PaymentMethodResponseDTO;
-import com.signature.autosave.modules.paymentmethod.dto.RegisterPaymentMethodDTO;
-import com.signature.autosave.modules.paymentmethod.dto.UpdatePaymentMethodDTO;
-import com.signature.autosave.modules.paymentmethod.service.PaymentMethodService;
+import com.signature.autosave.modules.pay.paymentmethod.dto.PaymentMethodResponseDTO;
+import com.signature.autosave.modules.pay.paymentmethod.dto.RegisterPaymentMethodDTO;
+import com.signature.autosave.modules.pay.paymentmethod.dto.UpdatePaymentMethodDTO;
+import com.signature.autosave.modules.pay.paymentmethod.service.PaymentMethodService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,11 +19,11 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/payment/methods")
+@RequestMapping("/v1/payment/")
 public class PaymentMethodController {
     private final PaymentMethodService paymentMethodService;
 
-    @PostMapping("/register")
+    @PostMapping("methods/register")
     public ResponseEntity<?> registerPaymentMethod(@RequestBody @Valid RegisterPaymentMethodDTO registerPaymentMethodDTO,
                                                    BindingResult validation,
                                                    @AuthenticationPrincipal UserDetails userDetails) {
@@ -43,7 +43,7 @@ public class PaymentMethodController {
 
     }
 
-    @GetMapping("")
+    @GetMapping("methods")
     public ResponseEntity<?> listPaymentMethods(@AuthenticationPrincipal UserDetails userDetails) {
 
         try{
@@ -56,7 +56,7 @@ public class PaymentMethodController {
         }
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("methods/{id}")
     public ResponseEntity<?> listPaymentMethod(@PathVariable("id") UUID id,
                                                @AuthenticationPrincipal UserDetails userDetails) {
 
@@ -70,7 +70,7 @@ public class PaymentMethodController {
         }
     }
 
-    @PatchMapping("/{id}/update")
+    @PatchMapping("methods/{id}/update")
     public ResponseEntity<?> updatePaymentMethod(@PathVariable("id") UUID id,
                                                  @RequestBody @Valid UpdatePaymentMethodDTO updatePaymentMethodDTO,
                                                  BindingResult validation,
@@ -89,7 +89,7 @@ public class PaymentMethodController {
         }
     }
 
-    @DeleteMapping("/{id}/delete")
+    @DeleteMapping("methods/{id}/delete")
     public ResponseEntity<?> deletePaymentMethod(@PathVariable("id") UUID id,
                                                  @AuthenticationPrincipal UserDetails userDetails) {
 
