@@ -1,9 +1,10 @@
 package com.signature.autosave.infra.configuration;
 
-import com.signature.autosave.web.filter.JWTAuthFilter;
+import com.signature.autosave.infra.filter.JWTAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -29,7 +30,7 @@ public class AuthConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        /*.requestMatchers(HttpMethod.POST, "/user").hasRole("BASIC")*/
+                        .requestMatchers(HttpMethod.PUT, "/users/update/").hasRole("ROLE_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

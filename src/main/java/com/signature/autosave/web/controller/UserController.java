@@ -22,7 +22,7 @@ import java.util.UUID;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping("/auth/create")
+    @PostMapping("auth/create")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterDTO newUser, BindingResult validation) {
         if (validation.hasErrors()) {
             return ResponseEntity.badRequest().body(Map.of("error", validation.getFieldErrors()));
@@ -37,7 +37,7 @@ public class UserController {
         }
     }
 
-    @GetMapping("/users/{id}")
+    @GetMapping("users/{id}")
     public ResponseEntity<?> list(@PathVariable("id") UUID id) {
 
         try{
@@ -49,7 +49,7 @@ public class UserController {
         }
     }
 
-    @GetMapping("/users/names")
+    @GetMapping("users/names")
     public ResponseEntity<?> listByNames(@RequestBody @Valid ListUserDTO users, BindingResult validation, Pageable pageable) {
         if (validation.hasErrors()) {
             return ResponseEntity.badRequest().body(Map.of("error", validation.getFieldErrors()));
@@ -64,7 +64,7 @@ public class UserController {
         }
     }
 
-    @PatchMapping("/users/{id}/update")
+    @PatchMapping("users/update/{id}")
     public ResponseEntity<?> update(@RequestBody @Valid UpdateUserDTO updatedUser, BindingResult validation,
                                     @PathVariable("id") UUID id,
                                     @AuthenticationPrincipal UserDetails userDetails) {
@@ -81,7 +81,23 @@ public class UserController {
         }
     }
 
-    @DeleteMapping("/users/{id}/delete")
+    @PutMapping("users/update/{id}")
+    public ResponseEntity<?> updateRole(@RequestBody @Valid UpdateRoleUserDTO updatedRoleUser, BindingResult validation,
+                                    @PathVariable("id") UUID id) {
+        if (validation.hasErrors()) {
+            return ResponseEntity.badRequest().body(Map.of("error", validation.getFieldErrors()));
+        }
+
+        try{
+            UserResponseDTO result = userService.updateRoleUser(updatedRoleUser, id);
+            return ResponseEntity.status(HttpStatus.OK).body(result);
+
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("users/delete/{id}")
     public ResponseEntity<?> delete(@RequestBody @Valid DeleteUserDTO deleteUser, BindingResult validation,
                                     @PathVariable("id") UUID id,
                                     @AuthenticationPrincipal UserDetails userDetails) {

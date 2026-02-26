@@ -36,30 +36,26 @@ public class UserService {
 
         userRepository.save(user);
 
-        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan());
+        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole());
     }
 
     @Transactional(readOnly = true)
     public List<UserResponseDTO> list(UUID id){
         return userRepository.findById(id).stream()
-                .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan()))
+                .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole()))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<UserResponseDTO> listUsersByNames(ListUserDTO listUserDTO, Pageable pageable) {
         return userRepository.findUsersByNickNameIn(listUserDTO.getNames(), pageable).stream()
-                    .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan()))
+                    .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole()))
                     .toList();
     }
 
     public UserResponseDTO updateUser(UpdateUserDTO updateUserDTO, UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
-
-        if (!user.getId().equals(id)) {
-            throw new IllegalArgumentException("Id do usuário não corresponde ao usuário autenticado");
-        }
 
         Optional.ofNullable(updateUserDTO.getEmail())
                 .ifPresent(user::setEmail);
@@ -70,12 +66,19 @@ public class UserService {
         Optional.ofNullable(updateUserDTO.getPassword())
                 .ifPresent(password -> user.setPassword(passwordEncoder.encode(password)));
 
-        Optional.ofNullable(updateUserDTO.getSubscriptionPlan())
-                .ifPresent(user::setSubscriptionPlan);
-
         userRepository.save(user);
 
-        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getSubscriptionPlan());
+        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole());
+    }
+
+    public UserResponseDTO updateRoleUser(UpdateRoleUserDTO updateRoleUserDTO, UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        user.setRole(updateRoleUserDTO.getRole());
+        userRepository.save(user);
+
+        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole());
     }
 
     public void deleteUser(DeleteUserDTO deleteUserDTO, UUID id, UserDetails userDetails) {

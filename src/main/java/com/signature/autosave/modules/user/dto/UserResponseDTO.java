@@ -1,6 +1,6 @@
 package com.signature.autosave.modules.user.dto;
 
-import com.signature.autosave.modules.user.domain.enums.SubscriptionPlan;
+import com.signature.autosave.modules.user.domain.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -19,12 +19,12 @@ public class UserResponseDTO {
     @Email
     private String email;
 
-    private SubscriptionPlan subscriptionPlan;
+    private Role role;
 
-    public UserResponseDTO(UUID id, String name, String email, SubscriptionPlan subscriptionPlan) {
+    public UserResponseDTO(UUID id, String name, String email, Role role) {
         this.id = id;
         this.name = name;
         this.email = email;
-        this.subscriptionPlan = subscriptionPlan;
+        this.role = role;
     }
 }

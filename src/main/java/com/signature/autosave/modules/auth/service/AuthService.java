@@ -29,7 +29,8 @@ public class AuthService implements UserDetailsService {
         }
 
         String token = jwtComponent.generateToken(existingUser);
-        UserResponseDTO userResponse = new UserResponseDTO(existingUser.getId(), existingUser.getNickName(), existingUser.getEmail(), existingUser.getSubscriptionPlan());
+        UserResponseDTO userResponse =
+                new UserResponseDTO(existingUser.getId(), existingUser.getNickName(), existingUser.getEmail(), existingUser.getRole());
 
         return new AuthResponseDTO( token, userResponse);
     }

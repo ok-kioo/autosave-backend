@@ -1,8 +1,9 @@
 package com.signature.autosave.modules.user.domain.entity;
 
-import com.signature.autosave.modules.user.domain.enums.SubscriptionPlan;
+import com.signature.autosave.modules.contract.domain.entity.PlanContract;
+import com.signature.autosave.modules.user.domain.enums.Role;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,33 +24,35 @@ public class User implements UserDetails {
     @Column(columnDefinition = "UUID")
     private UUID id;
 
-    @NotBlank
+    @NotNull
     @Column(unique = true)
     private String nickName;
 
-    @NotBlank
+    @NotNull
     @Column(unique = true)
     private String email;
 
-    @NotBlank
+    @NotNull
     private String password;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
-    private SubscriptionPlan subscriptionPlan;
+    private Role role;
+
+    @NotNull
+    @ManyToOne
+    @JoinColumn(name = "plan_contract_id", referencedColumnName = "id")
+    private PlanContract planContract;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return switch (this.subscriptionPlan) {
-            case FREE -> List.of(new SimpleGrantedAuthority(SubscriptionPlan.FREE.getPlanName()));
+        if (this.role == null) {
+            return List.of();
+        }
 
-            case BASIC -> List.of(new SimpleGrantedAuthority(SubscriptionPlan.BASIC.getPlanName()),
-                    new SimpleGrantedAuthority(SubscriptionPlan.FREE.getPlanName()));
-
-            case PREMIUM -> List.of(new SimpleGrantedAuthority(SubscriptionPlan.PREMIUM.getPlanName()),
-                    new SimpleGrantedAuthority(SubscriptionPlan.BASIC.getPlanName()),
-                    new SimpleGrantedAuthority(SubscriptionPlan.FREE.getPlanName()));
-
-        };
+        return List.of(
+                new SimpleGrantedAuthority("ROLE_" + this.role.getRole()
+        ));
     }
 
     @Override

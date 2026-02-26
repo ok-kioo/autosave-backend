@@ -1,9 +1,9 @@
 package com.signature.autosave.web.controller;
 
-import com.signature.autosave.modules.pay.paymentmethod.dto.PaymentMethodResponseDTO;
-import com.signature.autosave.modules.pay.paymentmethod.dto.RegisterPaymentMethodDTO;
-import com.signature.autosave.modules.pay.paymentmethod.dto.UpdatePaymentMethodDTO;
-import com.signature.autosave.modules.pay.paymentmethod.service.PaymentMethodService;
+import com.signature.autosave.modules.payment.dto.PaymentMethodResponseDTO;
+import com.signature.autosave.modules.payment.dto.RegisterPaymentMethodDTO;
+import com.signature.autosave.modules.payment.dto.UpdatePaymentMethodDTO;
+import com.signature.autosave.modules.payment.service.PaymentMethodService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -70,7 +70,7 @@ public class PaymentMethodController {
         }
     }
 
-    @PatchMapping("methods/{id}/update")
+    @PatchMapping("methods/update/{id}")
     public ResponseEntity<?> updatePaymentMethod(@PathVariable("id") UUID id,
                                                  @RequestBody @Valid UpdatePaymentMethodDTO updatePaymentMethodDTO,
                                                  BindingResult validation,
@@ -89,7 +89,7 @@ public class PaymentMethodController {
         }
     }
 
-    @DeleteMapping("methods/{id}/delete")
+    @DeleteMapping("methods/delete/{id}")
     public ResponseEntity<?> deletePaymentMethod(@PathVariable("id") UUID id,
                                                  @AuthenticationPrincipal UserDetails userDetails) {
 
