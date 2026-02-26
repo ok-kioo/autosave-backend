@@ -11,20 +11,27 @@ import com.signature.autosave.modules.contract.domain.enums.BillingStatus;
 import com.signature.autosave.modules.contract.domain.repository.PlanContractRepository;
 import com.signature.autosave.modules.contract.dto.CreatePlanContractDTO;
 import com.signature.autosave.modules.contract.dto.PlanContractResponseDTO;
-import com.signature.autosave.modules.payment.domain.entity.CreditCardPaymentMethod;
-import com.signature.autosave.modules.payment.domain.entity.PaymentMethod;
-import com.signature.autosave.modules.payment.domain.entity.PixPaymentMethod;
-import com.signature.autosave.modules.payment.domain.repository.PaymentMethodRepository;
+import com.signature.autosave.modules.payment.method.domain.entity.CreditCardPaymentMethod;
+import com.signature.autosave.modules.payment.method.domain.entity.PaymentMethod;
+import com.signature.autosave.modules.payment.method.domain.entity.PixPaymentMethod;
+import com.signature.autosave.modules.payment.method.domain.repository.PaymentMethodRepository;
+import com.signature.autosave.modules.payment.payload.domain.entity.Payload;
+import com.signature.autosave.modules.payment.payload.domain.repository.PayloadRepository;
+import com.signature.autosave.modules.payment.payload.service.event.PayloadCreateEvent;
+import com.signature.autosave.modules.payment.payload.service.event.PayloadRefundEvent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
+import com.signature.autosave.modules.subscription.domain.enums.BillingCycle;
 import com.signature.autosave.modules.subscription.domain.repository.SubscriptionPlanRepository;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,8 +44,9 @@ public class PlanContractService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final PlanContractRepository planContractRepository;
+    private final PayloadRepository payloadRepository;
 
-    public PlanContractResponseDTO createPayment(CreatePlanContractDTO createPlanContractDTO, UserDetails userDetails, String idempotencyKey) throws MPException, MPApiException {
+    public PlanContractResponseDTO createPlanContract(CreatePlanContractDTO createPlanContractDTO, UserDetails userDetails, String idempotencyKey) throws MPException, MPApiException {
         String result = redisComponent.processIdempotentRequest(idempotencyKey);
         if (result != null) {
             throw new RuntimeException("Requisição já processada");
@@ -62,6 +70,69 @@ public class PlanContractService {
                     createAnnuallyPayment(paymentMethod, subscriptionPlan, createPlanContractDTO.getInstallments(), idempotencyKey);
             case MONTHLY -> createMonthlyPayment(paymentMethod, subscriptionPlan, idempotencyKey);
         };
+    }
+
+    public PlanContractResponseDTO cancelPlanContract(UUID id, UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        PlanContract planContract = planContractRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
+
+        if (user.getPlanContract() == null || user.getPlanContract().getId() != planContract.getId()) {
+            throw new RuntimeException("Usuário não corresponde ao contrato");
+        }
+
+        if (planContract.getIsRecurring() && planContract.getEndsAt().isAfter(LocalDate.now())) {
+            mpComponent.cancelSubscription(planContract.getContractId());
+        } else {
+            throw new RuntimeException("Não é possível cancelar essa assinatura");
+        }
+
+        planContract.setStatus(BillingStatus.CANCELED);
+        planContractRepository.save(planContract);
+
+        return planContractResponseBuild(planContract);
+    }
+
+    public PlanContractResponseDTO refundPlanContract(UUID id, UserDetails userDetails) throws MPException, MPApiException {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        PlanContract planContract = planContractRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
+
+        if (user.getPlanContract() == null || user.getPlanContract().getId() != planContract.getId()) {
+            throw new RuntimeException("Usuário não corresponde ao contrato");
+        }
+
+        if (planContract.getEndsAt().isBefore(LocalDate.now())) {
+            throw new RuntimeException("Não é possível reembolsar um pagamento vencido");
+        }
+
+        boolean lessThan30Days =
+                ChronoUnit.DAYS.between(planContract.getStartedAt(), LocalDate.now()) < 30;
+
+        if (!lessThan30Days) {
+            throw new RuntimeException("Não é possível reembolsar um pagamento com mais de 30 dias");
+        }
+
+        if (planContract.getSubscriptionPlan().getBillingCycle() == BillingCycle.ANNUALLY) {
+            mpComponent.refundPayment(Long.valueOf(planContract.getContractId()));
+
+        }
+
+        if (planContract.getSubscriptionPlan().getBillingCycle() == BillingCycle.MONTHLY) {
+            Payload payload = payloadRepository.findByPlanContract(planContract)
+                    .orElseThrow(() -> new RuntimeException("Pagamento não encontrado"));
+
+            mpComponent.refundPayment(payload.getPaymentId());
+        }
+
+        planContract.setStatus(BillingStatus.REFUNDED);
+        planContractRepository.save(planContract);
+
+        return planContractResponseBuild(planContract);
     }
 
     @Transactional(readOnly = true)
@@ -92,35 +163,27 @@ public class PlanContractService {
     }
 
     private PlanContractResponseDTO createAnnuallyPayment(PaymentMethod paymentMethod, SubscriptionPlan subscriptionPlan, Integer installments, String idempotencyKey) throws MPException, MPApiException {
+        PlanContract planContract = PlanContractBuilder.builder()
+                .withPaymentMethod(paymentMethod)
+                .withSubscriptionPlan(subscriptionPlan)
+                .withStatus(BillingStatus.PENDING)
+                .withIsRecurring(false)
+                .withStartedAt(null)
+                .withEndsAt(null)
+                .build();
+
+        planContractRepository.save(planContract);
+
         if (paymentMethod instanceof PixPaymentMethod pixPaymentMethod) {
-            Payment pixPayment = mpComponent.createPixPayment(pixPaymentMethod, subscriptionPlan, idempotencyKey);
-
-            PlanContract planContract = PlanContractBuilder.builder()
-                    .withPaymentMethod(pixPaymentMethod)
-                    .withSubscriptionPlan(subscriptionPlan)
-                    .withContractId(String.valueOf(pixPayment.getId()))
-                    .withStatus(BillingStatus.PAID)
-                    .withIsRecurring(false)
-                    .withStartedAt(pixPayment.getDateCreated().toLocalDateTime())
-                    .withEndsAt(pixPayment.getDateCreated().toLocalDateTime().plusDays(365))
-                    .build();
-
+            Payment pixPayment = mpComponent.createPixPayment(pixPaymentMethod, subscriptionPlan, planContract, idempotencyKey);
+            planContract.setContractId(String.valueOf(pixPayment.getId()));
             planContractRepository.save(planContract);
 
             return planContractResponseBuild(planContract);
+
         } else if (paymentMethod instanceof CreditCardPaymentMethod creditCardPaymentMethod) {
-            Payment creditCardPayment = mpComponent.createCreditCardPayment(creditCardPaymentMethod, subscriptionPlan, installments, idempotencyKey);
-
-            PlanContract planContract = PlanContractBuilder.builder()
-                    .withPaymentMethod(creditCardPaymentMethod)
-                    .withSubscriptionPlan(subscriptionPlan)
-                    .withContractId(String.valueOf(creditCardPayment.getId()))
-                    .withStatus(BillingStatus.PAID)
-                    .withIsRecurring(false)
-                    .withStartedAt(creditCardPayment.getDateCreated().toLocalDateTime())
-                    .withEndsAt(creditCardPayment.getDateCreated().toLocalDateTime().plusDays(365))
-                    .build();
-
+            Payment creditCardPayment = mpComponent.createCreditCardPayment(creditCardPaymentMethod, subscriptionPlan, planContract, installments, idempotencyKey);
+            planContract.setContractId(String.valueOf(creditCardPayment.getId()));
             planContractRepository.save(planContract);
 
             return planContractResponseBuild(planContract);
@@ -135,17 +198,19 @@ public class PlanContractService {
         }
 
         if (paymentMethod instanceof CreditCardPaymentMethod creditCardPaymentMethod) {
-            String preaprovalId = mpComponent.createSubscription(subscriptionPlan.getPreapprovalPlanId(), creditCardPaymentMethod, idempotencyKey);
-
             PlanContract planContract = PlanContractBuilder.builder()
-                    .withPaymentMethod(creditCardPaymentMethod)
+                    .withPaymentMethod(paymentMethod)
                     .withSubscriptionPlan(subscriptionPlan)
-                    .withContractId(preaprovalId)
-                    .withStatus(BillingStatus.PAID)
-                    .withIsRecurring(true)
-                    .withStartedAt(LocalDateTime.now())
-                    .withEndsAt(LocalDateTime.now().plusDays(30))
+                    .withStatus(BillingStatus.PENDING)
+                    .withIsRecurring(false)
+                    .withStartedAt(null)
+                    .withEndsAt(null)
                     .build();
+
+            planContractRepository.save(planContract);
+
+            String preaprovalId = mpComponent.createSubscription(subscriptionPlan.getPreapprovalPlanId(), creditCardPaymentMethod, planContract, idempotencyKey);
+            planContract.setContractId(preaprovalId);
 
             planContractRepository.save(planContract);
 
@@ -167,5 +232,32 @@ public class PlanContractService {
         );
     }
 
+    @EventListener
+    public void onPayloadCreated(PayloadCreateEvent event) {
+        PlanContract planContract = planContractRepository.findById(event.planContract())
+                .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
+
+        planContract.setStatus(BillingStatus.PAID);
+        planContract.setStartedAt(LocalDate.now());
+        if (planContract.getSubscriptionPlan().getBillingCycle() == BillingCycle.ANNUALLY) {
+            planContract.setEndsAt(LocalDate.now().plusYears(1));
+        } else if (planContract.getSubscriptionPlan().getBillingCycle() == BillingCycle.MONTHLY) {
+            planContract.setEndsAt(LocalDate.now().plusMonths(1));
+        }
+        planContractRepository.save(planContract);
+    }
+
+    @EventListener
+    public void onPayloadRefund(PayloadRefundEvent event) {
+        PlanContract planContract = planContractRepository.findById(event.planContract())
+                .orElseThrow(() -> new RuntimeException("Contrato não encontrado"));
+
+        planContract.setStatus(BillingStatus.REFUNDED);
+        if(planContract.getSubscriptionPlan().getBillingCycle().equals(BillingCycle.ANNUALLY)) {
+            mpComponent.cancelSubscription(planContract.getSubscriptionPlan().getPreapprovalPlanId());
+        }
+
+        planContractRepository.save(planContract);
+    }
 }
 

@@ -1,10 +1,12 @@
 package com.signature.autosave.modules.email.content.domain.entity;
 
+import com.signature.autosave.modules.user.domain.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import jakarta.validation.constraints.NotBlank;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -17,16 +19,19 @@ public class EmailContent {
     @Column(columnDefinition = "UUID")
     private UUID id;
 
-    @NotBlank
-    private String title;
+    @NotNull
+    private String topic;
 
-    private String source;
+    @NotNull
+    private String subject;
 
-    private String destination;
-
-    @NotBlank
-    private String content;
-
-    @NotBlank
+    @NotNull
     private String body;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User editor;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 }

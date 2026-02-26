@@ -2,11 +2,11 @@ package com.signature.autosave.modules.contract.builder;
 
 import com.signature.autosave.modules.contract.domain.entity.PlanContract;
 import com.signature.autosave.modules.contract.domain.enums.BillingStatus;
-import com.signature.autosave.modules.payment.domain.entity.PaymentMethod;
+import com.signature.autosave.modules.payment.method.domain.entity.PaymentMethod;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 public class PlanContractBuilder {
     private SubscriptionPlan subscriptionPlan;
@@ -14,8 +14,8 @@ public class PlanContractBuilder {
     private String contractId;
     private BillingStatus status;
     private Boolean isRecurring;
-    private LocalDateTime startedAt;
-    private LocalDateTime endsAt;
+    private LocalDate startedAt;
+    private LocalDate endsAt;
 
     private PlanContractBuilder() {
     }
@@ -49,12 +49,12 @@ public class PlanContractBuilder {
         return this;
     }
 
-    public PlanContractBuilder withStartedAt(@NotNull LocalDateTime startedAt){
+    public PlanContractBuilder withStartedAt(@NotNull LocalDate startedAt){
         this.startedAt = startedAt;
         return this;
     }
 
-    public PlanContractBuilder withEndsAt(@NotNull LocalDateTime endsAt){
+    public PlanContractBuilder withEndsAt(LocalDate endsAt){
         this.endsAt = endsAt;
         return this;
     }

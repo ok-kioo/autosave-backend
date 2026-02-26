@@ -18,9 +18,10 @@ import com.mercadopago.resources.customer.Customer;
 import com.mercadopago.resources.customer.CustomerCard;
 import com.mercadopago.resources.customer.CustomerCardIssuer;
 import com.mercadopago.resources.payment.Payment;
-import com.signature.autosave.modules.payment.domain.entity.CreditCardPaymentMethod;
-import com.signature.autosave.modules.payment.domain.entity.PixPaymentMethod;
-import com.signature.autosave.modules.payment.dto.RegisterPaymentMethodDTO;
+import com.signature.autosave.modules.contract.domain.entity.PlanContract;
+import com.signature.autosave.modules.payment.method.domain.entity.CreditCardPaymentMethod;
+import com.signature.autosave.modules.payment.method.domain.entity.PixPaymentMethod;
+import com.signature.autosave.modules.payment.method.dto.RegisterPaymentMethodDTO;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
@@ -28,6 +29,7 @@ import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -42,7 +44,7 @@ public class MPComponent implements IIntermediationComponent{
     }
 
     @Override
-    public Payment createPixPayment(PixPaymentMethod pixPaymentMethod, SubscriptionPlan subscriptionPlan, String idempotencyKey) throws MPException, MPApiException {
+    public Payment createPixPayment(PixPaymentMethod pixPaymentMethod, SubscriptionPlan subscriptionPlan, PlanContract planContract, String idempotencyKey) throws MPApiException, MPException {
         try {
             Map<String, String> customHeaders = new HashMap<>();
             customHeaders.put("x-idempotency-key", idempotencyKey);
@@ -57,6 +59,7 @@ public class MPComponent implements IIntermediationComponent{
                     PaymentCreateRequest.builder()
                             .transactionAmount(subscriptionPlan.getPrice())
                             .description(subscriptionPlan.getName())
+                            .externalReference(planContract.getId().toString())
                             .paymentMethodId("pix")
                             .dateOfExpiration(OffsetDateTime.of(LocalDateTime.now(), ZoneOffset.UTC))
                             .payer(
@@ -80,7 +83,7 @@ public class MPComponent implements IIntermediationComponent{
     }
 
     @Override
-    public Payment createCreditCardPayment(CreditCardPaymentMethod creditCardPaymentMethod, SubscriptionPlan subscriptionPlan, Integer installments, String idempotencyKey) throws MPException, MPApiException {
+    public Payment createCreditCardPayment(CreditCardPaymentMethod creditCardPaymentMethod, SubscriptionPlan subscriptionPlan, PlanContract planContract, Integer installments, String idempotencyKey) throws MPException, MPApiException {
         try {
             Map<String, String> customHeaders = new HashMap<>();
             customHeaders.put("x-idempotency-key", idempotencyKey);
@@ -96,6 +99,7 @@ public class MPComponent implements IIntermediationComponent{
             PaymentCreateRequest paymentCreateRequest =
                     PaymentCreateRequest.builder()
                             .transactionAmount(subscriptionPlan.getPrice())
+                            .externalReference(planContract.getId().toString())
                             .description(subscriptionPlan.getName())
                             .installments(installments)
                             .paymentMethodId(card.getPaymentMethod().getId())
@@ -123,32 +127,42 @@ public class MPComponent implements IIntermediationComponent{
     }
 
     public String createPreapprovalPlan(SubscriptionPlan plan) {
+        Map<String, Object> autoRecurring = new HashMap<>();
+        autoRecurring.put("frequency", 1);
+        autoRecurring.put("frequency_type", plan.getBillingCycle().getCycle());
+        autoRecurring.put("transaction_amount", plan.getPrice());
+        autoRecurring.put("currency_id", "BRL");
+
+        if (plan.getTrialDays() != null && plan.getTrialDays() > 0) {
+            autoRecurring.put("free_trial", Map.of(
+                    "frequency", plan.getTrialDays(),
+                    "frequency_type", "days"
+            ));
+        }
+
         HttpResponse<JsonNode> response = Unirest.post(
                         "https://api.mercadopago.com/preapproval_plan")
                 .header("Authorization", "Bearer " + System.getenv("MP_ACCESS_TOKEN"))
                 .body(Map.of(
                         "reason", plan.getName(),
-                        "auto_recurring", Map.of(
-                                "frequency", 1,
-                                "frequency_type", plan.getBillingCycle().getCycle(),
-                                "transaction_amount", plan.getPrice(),
-                                "currency_id", "BRL"
-                        )
-                )).asJson();
+                        "auto_recurring", autoRecurring
+                ))
+                .asJson();
 
         if (response.getStatus() != 201) {
-            throw new RuntimeException("Erro ao criar plano");
+            throw new RuntimeException("Erro ao criar plano: " + response.getBody());
         }
 
         return response.getBody().getObject().getString("id");
     }
 
-    public String createSubscription(String mpPreapprovalPlanId, CreditCardPaymentMethod creditCardPaymentMethod, String idempotencyKey) {
+    public String createSubscription(String preapprovalPlanId, CreditCardPaymentMethod creditCardPaymentMethod, PlanContract planContract, String idempotencyKey) {
         Map<String, Object> requestBody = new HashMap<>();
 
-        requestBody.put("preapproval_plan_id", mpPreapprovalPlanId);
+        requestBody.put("preapproval_plan_id", preapprovalPlanId);
         requestBody.put("payer_email", creditCardPaymentMethod.getUser().getEmail());
         requestBody.put("card_id", creditCardPaymentMethod.getCustomerCardId());
+        requestBody.put("external_reference", planContract.getId().toString());
         requestBody.put("status", "authorized");
 
         HttpResponse<JsonNode> response = Unirest.post(
@@ -165,6 +179,45 @@ public class MPComponent implements IIntermediationComponent{
         }
 
         return response.getBody().getObject().getString("id"); // preapproval_id
+    }
+
+    public void cancelSubscription(String preapprovalId) {
+        HttpResponse<JsonNode> response = Unirest.put(
+                        "https://api.mercadopago.com/preapproval/" + preapprovalId)
+                .header("Authorization", "Bearer " + System.getenv("MP_ACCESS_TOKEN"))
+                .header("Content-Type", "application/json")
+                .body(Map.of(
+                        "status", "cancelled"
+                ))
+                .asJson();
+
+        if (response.getStatus() != 200) {
+            throw new RuntimeException(
+                    "Erro ao cancelar assinatura: " + response.getBody());
+        }
+    }
+
+    public void refundPayment(Long paymentId) throws MPException, MPApiException {
+        PaymentClient client = new PaymentClient();
+        client.refund(paymentId);
+    }
+
+    public LocalDate getNextPaymentDate(String preapprovalId) {
+        HttpResponse<JsonNode> response = Unirest.get(
+                        "https://api.mercadopago.com/preapproval/" + preapprovalId)
+                .header("Authorization", "Bearer " + System.getenv("MP_ACCESS_TOKEN"))
+                .asJson();
+
+        if (response.getStatus() != 200) {
+            throw new RuntimeException(
+                    "Erro ao consultar assinatura: " + response.getBody());
+        }
+
+        String nextPaymentDateStr = response.getBody()
+                .getObject()
+                .getString("next_payment_date");
+
+        return OffsetDateTime.parse(nextPaymentDateStr).toLocalDate();
     }
 
     @Override

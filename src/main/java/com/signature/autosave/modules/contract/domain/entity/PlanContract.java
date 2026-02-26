@@ -1,14 +1,14 @@
 package com.signature.autosave.modules.contract.domain.entity;
 
 import com.signature.autosave.modules.contract.domain.enums.BillingStatus;
-import com.signature.autosave.modules.payment.domain.entity.PaymentMethod;
+import com.signature.autosave.modules.payment.method.domain.entity.PaymentMethod;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Getter
@@ -31,7 +31,6 @@ public class PlanContract {
     @JoinColumn(name = "payment_method_id", referencedColumnName = "id")
     private PaymentMethod paymentMethod;
 
-    @NotNull
     private String contractId;
 
     @NotNull
@@ -41,10 +40,8 @@ public class PlanContract {
     @NotNull
     private Boolean isRecurring;
 
-    @NotNull
     @Column(updatable = false)
-    private LocalDateTime startedAt;
+    private LocalDate startedAt;
 
-    @NotNull
-    private LocalDateTime endsAt;
+    private LocalDate endsAt;
 }

@@ -1,9 +1,9 @@
 package com.signature.autosave.web.controller;
 
-import com.signature.autosave.modules.payment.dto.PaymentMethodResponseDTO;
-import com.signature.autosave.modules.payment.dto.RegisterPaymentMethodDTO;
-import com.signature.autosave.modules.payment.dto.UpdatePaymentMethodDTO;
-import com.signature.autosave.modules.payment.service.PaymentMethodService;
+import com.signature.autosave.modules.payment.method.dto.PaymentMethodResponseDTO;
+import com.signature.autosave.modules.payment.method.dto.RegisterPaymentMethodDTO;
+import com.signature.autosave.modules.payment.method.dto.UpdatePaymentMethodDTO;
+import com.signature.autosave.modules.payment.method.service.PaymentMethodService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

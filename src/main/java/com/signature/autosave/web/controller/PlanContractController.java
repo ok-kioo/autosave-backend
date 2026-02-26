@@ -31,7 +31,7 @@ public class PlanContractController {
         }
 
         try{
-            PlanContractResponseDTO result = planContractService.createPayment(createPlanContractDTO, userDetails, idempotencyKey);
+            PlanContractResponseDTO result = planContractService.createPlanContract(createPlanContractDTO, userDetails, idempotencyKey);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(result);
 
@@ -65,14 +65,29 @@ public class PlanContractController {
         }
     }
 
-    /*@PostMapping("payments/refund")
-    public ResponseEntity<?> refundPayment(@RequestBody @Valid String paymentDetails, BindingResult validation) {
-        if(validation.hasErrors()){
-            return ResponseEntity.badRequest().body(Map.of("error", validation.getFieldErrors()));
-        }
+    @GetMapping("/cancel/{id}")
+    public ResponseEntity<?> cancelPlanContract(@PathVariable("id") UUID id,
+                                         @AuthenticationPrincipal UserDetails userDetails) {
+        try{
+            PlanContractResponseDTO result = planContractService.cancelPlanContract(id, userDetails);
 
-        // Logic to process the refund
-        // For now, returning a placeholder response
-        return ResponseEntity.ok("Payment refunded successfully");
-    }*/
+            return ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(result);
+
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/refund/{id}")
+    public ResponseEntity<?> refundPlanContract(@PathVariable("id") UUID id,
+                                                @AuthenticationPrincipal UserDetails userDetails) {
+        try{
+            PlanContractResponseDTO result = planContractService.refundPlanContract(id, userDetails);
+
+            return ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(result);
+
+        }catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
 }
