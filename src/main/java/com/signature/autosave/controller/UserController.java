@@ -11,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -40,7 +39,7 @@ public class UserController {
     public ResponseEntity<?> list(@PathVariable("id") UUID id) {
 
         try{
-            List<UserResponseDTO> result = userService.list(id);
+            UserResponseDTO result = userService.list(id);
             return ResponseEntity.status(HttpStatus.FOUND).body(result);
 
         }catch (Exception e) {

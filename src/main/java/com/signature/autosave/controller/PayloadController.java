@@ -31,7 +31,7 @@ public class PayloadController {
     @GetMapping("{id}")
     public ResponseEntity<?> listPayloads(@PathVariable UUID id) {
         try {
-            List<PayloadResponseDTO> result = payloadService.listPayload(id);
+            PayloadResponseDTO result = payloadService.listPayload(id);
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 
         } catch (Exception e) {

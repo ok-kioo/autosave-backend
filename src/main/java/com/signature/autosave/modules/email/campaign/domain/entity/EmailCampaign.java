@@ -1,4 +1,4 @@
-package com.signature.autosave.modules.email.record.domain.entity;
+package com.signature.autosave.modules.email.campaign.domain.entity;
 
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
@@ -33,6 +33,5 @@ public class EmailCampaign {
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
-
 
 }

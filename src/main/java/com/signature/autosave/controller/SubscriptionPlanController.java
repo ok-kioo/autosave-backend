@@ -40,7 +40,7 @@ public class SubscriptionPlanController {
     public ResponseEntity<?> listSubscription(@PathVariable("id") UUID id) {
 
         try{
-            List<SubscriptionPlanResponseDTO> result = subscriptionPlanService.listSubscription(id);
+            SubscriptionPlanResponseDTO result = subscriptionPlanService.listSubscription(id);
             return ResponseEntity.status(HttpStatus.FOUND).body(result);
 
         }catch (Exception e) {

@@ -29,16 +29,16 @@ public class PayloadService {
     private final ApplicationEventPublisher publisher;
 
     @Transactional(readOnly = true)
-    public List<PayloadResponseDTO> listPayload(UUID id){
-        return payloadRepository.findById(id).stream()
-                .map(payload -> new PayloadResponseDTO(
-                        payload.getId(),
-                        payload.getAmount(),
-                        payload.getPaymentId(),
-                        payload.getPayloadType(),
-                        payload.getPlanContract()
-                ))
-                .toList();
+    public PayloadResponseDTO listPayload(UUID id){
+        Payload payload = payloadRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Payload not found with id: " + id));
+
+        return new PayloadResponseDTO(
+                payload.getId(),
+                payload.getAmount(),
+                payload.getPaymentId(),
+                payload.getPayloadType(),
+                payload.getPlanContract());
     }
 
     @Transactional(readOnly = true)

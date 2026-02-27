@@ -39,10 +39,11 @@ public class SubscriptionPlanService {
     }
 
     @Transactional(readOnly = true)
-    public List<SubscriptionPlanResponseDTO> listSubscription(UUID id){
-        return subscriptionPlanRepository.findByIdAndIsActive(id, true).stream()
-                .map(subscriptionPlan -> new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt()))
-                .toList();
+    public SubscriptionPlanResponseDTO listSubscription(UUID id){
+        SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
+                .orElseThrow(() -> new IllegalArgumentException("Plano não encontrado"));
+
+        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt());
     }
 
     @Transactional(readOnly = true)

@@ -1,4 +1,4 @@
-package com.signature.autosave.modules.email.record.domain.enums;
+package com.signature.autosave.modules.email.content.domain.enums;
 
 public enum EmailTopic {
     TECH("Tecnologia"),

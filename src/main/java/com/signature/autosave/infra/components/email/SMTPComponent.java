@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,9 +14,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Service
+@Component
 @RequiredArgsConstructor
-public class SMTPProvider implements EmailProvider {
+public class SMTPComponent implements IEmailComponent {
     private final JavaMailSender mailSender;
     private final Map<String, String> templateCache = new ConcurrentHashMap<>();
 
@@ -39,7 +39,6 @@ public class SMTPProvider implements EmailProvider {
     public String buildTemplate(String name, String datetime, String topic, String title, String text1,
                                 String text2, String buttonUrl) {
         return processTemplate(
-                "/templates/template.html",
                 Map.of(
                         "NAME", name,
                         "DATETIME", datetime,
@@ -52,8 +51,8 @@ public class SMTPProvider implements EmailProvider {
         );
     }
 
-    private String loadTemplate(String path) {
-        return templateCache.computeIfAbsent(path, p -> {
+    private String loadTemplate() {
+        return templateCache.computeIfAbsent("/templates/template.html", p -> {
             try (InputStream is = getClass().getResourceAsStream(p)) {
                 if (is == null) {
                     throw new IllegalArgumentException("Template not found: " + p);
@@ -65,8 +64,8 @@ public class SMTPProvider implements EmailProvider {
         });
     }
 
-    private String processTemplate(String path, Map<String, String> variables) {
-        String template = loadTemplate(path);
+    private String processTemplate(Map<String, String> variables) {
+        String template = loadTemplate();
 
         for (Map.Entry<String, String> entry : variables.entrySet()) {
             template = template.replace("{{" + entry.getKey() + "}}", entry.getValue());

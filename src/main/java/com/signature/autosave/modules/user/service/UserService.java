@@ -5,13 +5,11 @@ import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import com.signature.autosave.modules.user.dto.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,17 +38,11 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<UserResponseDTO> list(UUID id){
-        return userRepository.findById(id).stream()
-                .map(user -> new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole()))
-                .toList();
-    }
+    public UserResponseDTO list(UUID id){
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-    @Transactional(readOnly = true)
-    public List<UserResponseDTO> listUsersByNames(ListUserDTO listUserDTO, Pageable pageable) {
-        return userRepository.findUsersByNameIn(listUserDTO.getNames(), pageable).stream()
-                    .map(user -> new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole()))
-                    .toList();
+        return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
     public UserResponseDTO updateUser(UpdateUserDTO updateUserDTO, UUID id, UserDetails userDetails) {
