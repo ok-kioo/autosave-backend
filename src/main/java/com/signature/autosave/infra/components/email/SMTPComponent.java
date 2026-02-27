@@ -36,16 +36,14 @@ public class SMTPComponent implements IEmailComponent {
         mailSender.send(message);
     }
 
-    public String buildTemplate(String name, String datetime, String topic, String title, String text1,
-                                String text2, String buttonUrl) {
+    public String buildTemplate(String name, String datetime, String topic, String title, String previewText, String buttonUrl) {
         return processTemplate(
                 Map.of(
                         "NAME", name,
                         "DATETIME", datetime,
                         "TOPIC", topic,
                         "TITLE", title,
-                        "TEXT.1", text1,
-                        "TEXT.2", text2,
+                        "PREVIEW_TEXT", previewText,
                         "BUTTON_URL", buttonUrl
                 )
         );

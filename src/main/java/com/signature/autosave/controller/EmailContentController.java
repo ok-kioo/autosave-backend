@@ -3,6 +3,7 @@ package com.signature.autosave.controller;
 import com.mercadopago.net.HttpStatus;
 import com.signature.autosave.modules.email.content.dto.CreateEmailContentDTO;
 import com.signature.autosave.modules.email.content.dto.EmailContentResponseDTO;
+import com.signature.autosave.modules.email.content.dto.UpdateEmailContentDTO;
 import com.signature.autosave.modules.email.content.service.EmailContentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +26,17 @@ public class EmailContentController {
         try {
             EmailContentResponseDTO result = emailContentService.createEmailContent(createEmailContentDTO, userDetails);
             return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(result);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PatchMapping("/update/{id}")
+    public ResponseEntity<?> updateEmailContent(@PathVariable UUID id, @RequestBody UpdateEmailContentDTO updateEmailContentDTO, @AuthenticationPrincipal UserDetails userDetails) {
+        try {
+            EmailContentResponseDTO result = emailContentService.updateEmailContent(id, updateEmailContentDTO, userDetails);
+            return ResponseEntity.status(org.springframework.http.HttpStatus.OK).body(result);
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));

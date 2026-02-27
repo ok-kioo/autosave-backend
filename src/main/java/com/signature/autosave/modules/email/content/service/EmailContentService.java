@@ -1,50 +1,47 @@
 package com.signature.autosave.modules.email.content.service;
 
+import com.signature.autosave.infra.components.email.IEmailComponent;
+import com.signature.autosave.modules.email.campaign.domain.entity.EmailCampaignReview;
+import com.signature.autosave.modules.email.campaign.domain.enums.EmailCampaignStatus;
+import com.signature.autosave.modules.email.campaign.domain.repository.EmailCampaignReviewRepository;
 import com.signature.autosave.modules.email.content.builder.EmailContentBuilder;
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.email.content.domain.repository.EmailContentRepository;
 import com.signature.autosave.modules.email.content.dto.CreateEmailContentDTO;
 import com.signature.autosave.modules.email.content.dto.EmailContentResponseDTO;
+import com.signature.autosave.modules.email.content.dto.UpdateEmailContentDTO;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class EmailContentService {
     private final EmailContentRepository emailContentRepository;
+    private final EmailCampaignReviewRepository emailCampaignReviewRepository;
     private final UserRepository userRepository;
-    /*private final IEmailComponent IEmailComponent;
+    private final IEmailComponent emailComponent;
 
     @Value("${app.frontend.url}")
     private String frontEndUrl;
-
-    String template = IEmailComponent.buildTemplate(
-            user.getName(),
-            emailContent.getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")),
-            createEmailContentDTO.getTopic(),
-            createEmailContentDTO.getTitle(),
-            createEmailContentDTO.getText1(),
-            createEmailContentDTO.getText2(),
-            frontEndUrl+"/email/content/"+emailContent.getId()
-    );*/
 
     public EmailContentResponseDTO createEmailContent(CreateEmailContentDTO createEmailContentDTO, UserDetails userDetails){
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-        String body = buildEmailBody(createEmailContentDTO);
-
         EmailContent emailContent = EmailContentBuilder.builder()
-                .withTopic(createEmailContentDTO.getTopic())
+                .withTopic(createEmailContentDTO.getTopic().name())
                 .withSubject(createEmailContentDTO.getTitle())
-                .withBody(body)
+                .withBody(createEmailContentDTO.getBody())
                 .withEditor(user)
                 .withCreatedAt(LocalDateTime.now())
                 .build();
@@ -61,6 +58,7 @@ public class EmailContentService {
         );
     }
 
+    @Transactional(readOnly = true)
     public EmailContentResponseDTO listEmailContent(UUID id) {
         EmailContent emailContent = emailContentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
@@ -75,6 +73,7 @@ public class EmailContentService {
         );
     }
 
+    @Transactional(readOnly = true)
     public List<EmailContentResponseDTO> listEmailContents(UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
@@ -87,6 +86,50 @@ public class EmailContentService {
                 emailContent.getEditor(),
                 emailContent.getCreatedAt()
         )).toList();
+    }
+
+    public EmailContentResponseDTO updateEmailContent(UUID id, UpdateEmailContentDTO updateEmailContentDTO, UserDetails userDetails) {
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+
+        EmailContent emailContent = emailContentRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+
+        if(emailContent.getEditor() != user){
+            throw new IllegalArgumentException("Apenas o editor do conteúdo pode editá-lo");
+        }
+
+        List<EmailCampaignReview> emailCampaignReviews = emailCampaignReviewRepository.findByEmailContent(emailContent);
+
+        if(!emailCampaignReviews.contains(EmailCampaignStatus.PENDING)){
+            throw new IllegalArgumentException("O conteúdo só pode ser editado se for requisitado por um avaliador");
+        }
+
+        Optional.ofNullable(updateEmailContentDTO.getTopic())
+                .ifPresent(topic -> emailContent.setTopic(topic.name()));
+        Optional.ofNullable(updateEmailContentDTO.getTitle())
+                .ifPresent(emailContent::setSubject);
+        Optional.ofNullable(updateEmailContentDTO.getBody())
+                .ifPresent(emailContent::setBody);
+
+        emailContentRepository.save(emailContent);
+
+        emailCampaignReviews.forEach(emailCampaignReview -> {
+            if(emailCampaignReview.getStatus() == EmailCampaignStatus.PENDING){
+                emailCampaignReview.setStatus(EmailCampaignStatus.UPDATED);
+                emailCampaignReviewRepository.save(emailCampaignReview);
+                emailContentUpdatedNotify(emailContent, emailCampaignReview.getId(), emailCampaignReview.getReviewer().getEmail());
+            }
+        });
+
+        return new EmailContentResponseDTO(
+                emailContent.getId(),
+                emailContent.getTopic(),
+                emailContent.getSubject(),
+                emailContent.getBody(),
+                emailContent.getEditor(),
+                emailContent.getCreatedAt()
+        );
     }
 
     public void deleteEmailContent(UUID id, UserDetails userDetails) {
@@ -103,21 +146,23 @@ public class EmailContentService {
         emailContentRepository.delete(emailContent);
     }
 
-    private String buildEmailBody(CreateEmailContentDTO createEmailContentDTO) {
-        return """
-                %s
+    private void emailContentUpdatedNotify(EmailContent emailContent, UUID emailCampaignReviewId, String emailCampaignReviewerEmail){
 
-                %s
-
-                %s
-
-                %s
-                """.formatted(
-                createEmailContentDTO.getText1(),
-                createEmailContentDTO.getText2(),
-                createEmailContentDTO.getText3(),
-                createEmailContentDTO.getText4()
+        String template = emailComponent.buildTemplate(
+                emailContent.getEditor().getName(),
+                LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")),
+                "Revisão de campanha de email",
+                "Conteúdo de email atualizado",
+                "O conteúdo do email '" + emailContent.getSubject() + "', referente a campanha revisada por você foi atualizado. Por favor, revise as alterações e aprove ou rejeite a campanha de email associada.",
+                frontEndUrl+"/email/content/review"+emailCampaignReviewId
         );
-    }
 
+        try {
+            emailComponent.sendEmail(emailCampaignReviewerEmail,
+                    "Conteúdo de email atualizado - Revisão de campanha de email",
+                    template);
+        } catch (jakarta.mail.MessagingException e) {
+            throw new RuntimeException("Erro ao enviar email de notificação", e);
+        }
+}
 }

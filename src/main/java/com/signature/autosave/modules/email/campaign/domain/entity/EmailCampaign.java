@@ -3,6 +3,7 @@ package com.signature.autosave.modules.email.campaign.domain.entity;
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,6 +20,9 @@ public class EmailCampaign {
     @Column(columnDefinition = "UUID")
     private UUID id;
 
+    @NotNull
+    private String textPreview;
+
     @JoinColumn(name = "email_content_id", referencedColumnName = "id")
     @OneToOne
     private EmailContent emailContent;
@@ -29,7 +33,7 @@ public class EmailCampaign {
             joinColumns = @JoinColumn(name = "email_campaign_id"),
             inverseJoinColumns = @JoinColumn(name = "subscription_plan_id")
     )
-    private List<SubscriptionPlan> subscriptionPlan;
+    private List<SubscriptionPlan> subscriptionPlans;
 
     @Column(name = "is_active", nullable = false)
     private boolean isActive;
