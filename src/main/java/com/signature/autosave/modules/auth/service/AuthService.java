@@ -30,7 +30,7 @@ public class AuthService implements UserDetailsService {
 
         String token = jwtComponent.generateToken(existingUser);
         UserResponseDTO userResponse =
-                new UserResponseDTO(existingUser.getId(), existingUser.getNickName(), existingUser.getEmail(), existingUser.getRole());
+                new UserResponseDTO(existingUser.getId(), existingUser.getName(), existingUser.getEmail(), existingUser.getRole());
 
         return new AuthResponseDTO( token, userResponse);
     }

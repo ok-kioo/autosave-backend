@@ -29,27 +29,27 @@ public class UserService {
         String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
 
         User user = UserBuilder.builder()
-                    .withNickName(registerDTO.getName())
+                    .withName(registerDTO.getName())
                     .withEmail(registerDTO.getEmail())
                     .withPassword(encodedPassword)
                     .build();
 
         userRepository.save(user);
 
-        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole());
+        return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
     @Transactional(readOnly = true)
     public List<UserResponseDTO> list(UUID id){
         return userRepository.findById(id).stream()
-                .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole()))
+                .map(user -> new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole()))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<UserResponseDTO> listUsersByNames(ListUserDTO listUserDTO, Pageable pageable) {
-        return userRepository.findUsersByNickNameIn(listUserDTO.getNames(), pageable).stream()
-                    .map(user -> new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole()))
+        return userRepository.findUsersByNameIn(listUserDTO.getNames(), pageable).stream()
+                    .map(user -> new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole()))
                     .toList();
     }
 
@@ -60,15 +60,15 @@ public class UserService {
         Optional.ofNullable(updateUserDTO.getEmail())
                 .ifPresent(user::setEmail);
 
-        Optional.ofNullable(updateUserDTO.getUsername())
-                .ifPresent(user::setNickName);
+        Optional.ofNullable(updateUserDTO.getName())
+                .ifPresent(user::setName);
 
         Optional.ofNullable(updateUserDTO.getPassword())
                 .ifPresent(password -> user.setPassword(passwordEncoder.encode(password)));
 
         userRepository.save(user);
 
-        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole());
+        return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
     public UserResponseDTO updateRoleUser(UpdateRoleUserDTO updateRoleUserDTO, UUID id) {
@@ -78,7 +78,7 @@ public class UserService {
         user.setRole(updateRoleUserDTO.getRole());
         userRepository.save(user);
 
-        return new UserResponseDTO(user.getId(), user.getNickName(), user.getEmail(), user.getRole());
+        return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
     public void deleteUser(DeleteUserDTO deleteUserDTO, UUID id, UserDetails userDetails) {

@@ -26,11 +26,11 @@ public class RegisterPaymentMethodDTO {
     @Enumerated(EnumType.STRING)
     private PaymentMethodType type;
 
-    private String token;
+    private String gatewayToken;
 
-    private String issuerId;
+    private String gatewayIssuerId;
 
-    private String paymentMethodId;
+    private String gatewayPaymentMethodId;
 
     @JsonProperty("isDefault")
     private boolean isDefault;

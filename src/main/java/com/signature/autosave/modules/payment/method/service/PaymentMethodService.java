@@ -100,7 +100,7 @@ public class PaymentMethodService {
         return responseDTOBuild(paymentMethod, user);
     }
 
-    public void deletePaymentMethod(UUID id, UserDetails userDetails) {
+    public void deletePaymentMethod(UUID id, UserDetails userDetails) throws MPException, MPApiException {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -115,17 +115,26 @@ public class PaymentMethodService {
             throw new RuntimeException("Você não pode excluir o método de pagamento padrão");
         }
 
-        switch (paymentMethod.getType()) {
-            case CREDIT_CARD -> paymentMethodRepository.delete(creditMethodRepository.findById(paymentMethod.getId())
-                    .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado")));
+        if(paymentMethod instanceof CreditCardPaymentMethod creditCardPaymentMethod){
+            paymentMethodRepository.delete(creditMethodRepository.findById(paymentMethod.getId())
+                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado")));
 
-            case PIX -> paymentMethodRepository.delete(pixMethodRepository.findById(paymentMethod.getId())
+            new CustomerCardClient().delete(creditCardPaymentMethod.getCustomerId(), creditCardPaymentMethod.getCustomerCardId());
+        }
+
+        if(paymentMethod instanceof PixPaymentMethod) {
+            paymentMethodRepository.delete(pixMethodRepository.findById(paymentMethod.getId())
                     .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado")));
-            default -> throw new RuntimeException("Tipo de método de pagamento não suportado");
         }
     }
 
     private CreditCardResponseDTO handleCreditCardCreation(RegisterPaymentMethodDTO registerPaymentMethodDTO, User user) throws MPException, MPApiException {
+        if(registerPaymentMethodDTO.getGatewayPaymentMethodId() == null
+            || registerPaymentMethodDTO.getGatewayToken() == null
+            || registerPaymentMethodDTO.getGatewayIssuerId() == null) {
+            throw new RuntimeException("É necessário cadastrar o cartão com os campos token, issuerId e paymentMethodId preenchidos");
+        }
+
         Customer customer = mpComponent.createCustomer(registerPaymentMethodDTO);
         CustomerCard customerCard = mpComponent.saveCreditCard(registerPaymentMethodDTO, customer);
 
@@ -173,18 +182,18 @@ public class PaymentMethodService {
     }
 
     private PaymentMethodResponseDTO responseDTOBuild(PaymentMethod paymentMethod, User user) throws MPException, MPApiException {
-        if (paymentMethod instanceof CreditCardPaymentMethod creditCard && paymentMethod.getUser().getId() == user.getId()) {
+        if (paymentMethod instanceof CreditCardPaymentMethod creditCardPaymentMethod && paymentMethod.getUser().getId() == user.getId()) {
             CustomerCardClient client = new CustomerCardClient();
-            CustomerCard card = client.get(creditCard.getCustomerId(), creditCard.getCustomerCardId());
+            CustomerCard card = client.get(creditCardPaymentMethod.getCustomerId(), creditCardPaymentMethod.getCustomerCardId());
 
             return new CreditCardResponseDTO(
-                    creditCard.getId(),
-                    creditCard.getType(),
-                    creditCard.getFirstName(),
-                    creditCard.getLastName(),
-                    creditCard.getDocumentNumber(),
-                    creditCard.getCreatedAt(),
-                    creditCard.isDefault(),
+                    creditCardPaymentMethod.getId(),
+                    creditCardPaymentMethod.getType(),
+                    creditCardPaymentMethod.getFirstName(),
+                    creditCardPaymentMethod.getLastName(),
+                    creditCardPaymentMethod.getDocumentNumber(),
+                    creditCardPaymentMethod.getCreatedAt(),
+                    creditCardPaymentMethod.isDefault(),
                     user,
                     card.getCardholder().getName(),
                     card.getIssuer().getName(),

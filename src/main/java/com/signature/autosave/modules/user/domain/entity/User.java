@@ -26,7 +26,7 @@ public class User implements UserDetails {
 
     @NotNull
     @Column(unique = true)
-    private String nickName;
+    private String name;
 
     @NotNull
     @Column(unique = true)

@@ -1,4 +1,4 @@
-package com.signature.autosave.web.controller;
+package com.signature.autosave.controller;
 
 import com.signature.autosave.modules.auth.dto.AuthResponseDTO;
 import com.signature.autosave.modules.auth.dto.LoginDTO;

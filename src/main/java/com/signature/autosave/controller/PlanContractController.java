@@ -1,4 +1,4 @@
-package com.signature.autosave.web.controller;
+package com.signature.autosave.controller;
 
 import com.mercadopago.net.HttpStatus;
 import com.signature.autosave.modules.contract.dto.CreatePlanContractDTO;
@@ -65,7 +65,7 @@ public class PlanContractController {
         }
     }
 
-    @GetMapping("/cancel/{id}")
+    @PostMapping("/cancel/{id}")
     public ResponseEntity<?> cancelPlanContract(@PathVariable("id") UUID id,
                                          @AuthenticationPrincipal UserDetails userDetails) {
         try{
@@ -78,7 +78,7 @@ public class PlanContractController {
         }
     }
 
-    @GetMapping("/refund/{id}")
+    @PostMapping("/refund/{id}")
     public ResponseEntity<?> refundPlanContract(@PathVariable("id") UUID id,
                                                 @AuthenticationPrincipal UserDetails userDetails) {
         try{

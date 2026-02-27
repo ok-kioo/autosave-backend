@@ -5,7 +5,7 @@ import com.signature.autosave.modules.user.domain.enums.Role;
 import jakarta.validation.constraints.NotBlank;
 
 public class UserBuilder {
-    private String nickName;
+    private String name;
     private String email;
     private String password;
 
@@ -16,8 +16,8 @@ public class UserBuilder {
         return new UserBuilder();
     }
 
-    public UserBuilder withNickName(@NotBlank String nickName) {
-        this.nickName = nickName;
+    public UserBuilder withName(@NotBlank String name) {
+        this.name = name;
         return this;
     }
 
@@ -33,7 +33,7 @@ public class UserBuilder {
 
     public User build() {
         User user = new User();
-        user.setNickName(this.nickName);
+        user.setName(this.name);
         user.setEmail(this.email);
         user.setPassword(this.password);
         user.setRole(Role.VIEWER);

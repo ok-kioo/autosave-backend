@@ -261,13 +261,13 @@ public class MPComponent implements IIntermediationComponent{
     public CustomerCard saveCreditCard(RegisterPaymentMethodDTO registerPaymentMethodDTO, Customer customer) throws MPException, MPApiException {
         try {
         CustomerCardIssuer issuer = CustomerCardIssuer.builder()
-                .id(registerPaymentMethodDTO.getIssuerId())
+                .id(registerPaymentMethodDTO.getGatewayIssuerId())
                 .build();
 
         CustomerCardCreateRequest cardCreateRequest = CustomerCardCreateRequest.builder()
-                .token(registerPaymentMethodDTO.getToken())
+                .token(registerPaymentMethodDTO.getGatewayToken())
                 .issuer(issuer)
-                .paymentMethodId(registerPaymentMethodDTO.getPaymentMethodId())
+                .paymentMethodId(registerPaymentMethodDTO.getGatewayPaymentMethodId())
                 .build();
 
         return new CustomerCardClient().create(customer.getId(), cardCreateRequest);

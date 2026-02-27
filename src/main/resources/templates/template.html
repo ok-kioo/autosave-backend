@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Newsletter Autosave</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #fff7ed, #ffe9d6);
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+
+        .wrapper {
+            width: 100%;
+            padding: 40px 15px;
+        }
+
+        .container {
+            max-width: 620px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(255, 115, 0, 0.15);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            padding: 45px 30px;
+            text-align: center;
+            color: #ffffff;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 30px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .header p {
+            margin-top: 10px;
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px 35px;
+        }
+
+        .topic {
+            font-size: 13px;
+            font-weight: bold;
+            color: #f97316;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+        }
+
+        .info {
+            font-size: 13px;
+            font-weight: bold;
+            color: #f97316;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            margin-right: 12px;
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 18px;
+        }
+
+        .text {
+            font-size: 15px;
+            color: #444;
+            line-height: 1.7;
+            margin-bottom: 30px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 14px 26px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 50px;
+            box-shadow: 0 6px 18px rgba(249, 115, 22, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .button:hover {
+            opacity: 0.9;
+        }
+
+        .divider {
+            height: 1px;
+            background: #f1f1f1;
+            margin: 30px 0;
+        }
+
+        .footer {
+            background: #fff7ed;
+            text-align: center;
+            padding: 25px;
+            font-size: 12px;
+            color: #9a3412;
+        }
+
+        .footer strong {
+            color: #ea580c;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .content {
+                padding: 30px 20px;
+            }
+            .header {
+                padding: 35px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<div class="wrapper">
+    <div class="container">
+
+        <div class="header">
+            <h1>AUTOSAVE</h1>
+            <p>Ponto automático de salvamento de notícias</p>
+        </div>
+
+        <div class="content">
+            <div class="info">
+                {{NAME}} | {{DATETIME}}
+            </div>
+
+            <div class="topic">
+                {{TOPIC}}
+            </div>
+
+            <div class="title">
+                {{TITLE}}
+            </div>
+
+            <div class="text">
+                {{TEXT.1}}
+                <br><br>
+                {{TEXT.2}}
+            </div>
+
+            <a href="{{BUTTON_URL}}" class="button">
+                Ler Conteúdo Completo
+            </a>
+
+            <div class="divider"></div>
+
+            <div class="text">
+                Continue acompanhando nossas comunicações para não perder novidades importantes.
+            </div>
+        </div>
+
+        <div class="footer">
+            © 2026 <strong>Autosave</strong> • Todos os direitos reservados<br>
+            Você está recebendo este e-mail porque se cadastrou em nossa plataforma.
+        </div>
+
+    </div>
+</div>
+</body>
+</html>

@@ -30,7 +30,8 @@ public class AuthConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/users/update/").hasRole("ROLE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/users/update/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/payload", "payload/").hasAnyRole("BILLING_MANAGER", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

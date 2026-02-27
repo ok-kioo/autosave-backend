@@ -1,4 +1,4 @@
-package com.signature.autosave.web.controller;
+package com.signature.autosave.controller;
 
 import com.signature.autosave.modules.payment.method.dto.PaymentMethodResponseDTO;
 import com.signature.autosave.modules.payment.method.dto.RegisterPaymentMethodDTO;
@@ -19,7 +19,7 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/v1/payment/")
+@RequestMapping("/payment/")
 public class PaymentMethodController {
     private final PaymentMethodService paymentMethodService;
 

@@ -6,7 +6,7 @@ import lombok.Getter;
 
 @Getter
 public class UpdateUserDTO {
-    private String username;
+    private String name;
 
     @Email
     private String email;

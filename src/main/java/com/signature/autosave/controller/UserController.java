@@ -1,10 +1,9 @@
-package com.signature.autosave.web.controller;
+package com.signature.autosave.controller;
 
 import com.signature.autosave.modules.user.dto.*;
 import com.signature.autosave.modules.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -49,21 +48,6 @@ public class UserController {
         }
     }
 
-    @GetMapping("users/names")
-    public ResponseEntity<?> listByNames(@RequestBody @Valid ListUserDTO users, BindingResult validation, Pageable pageable) {
-        if (validation.hasErrors()) {
-            return ResponseEntity.badRequest().body(Map.of("error", validation.getFieldErrors()));
-        }
-
-        try{
-            List<UserResponseDTO> result = userService.listUsersByNames(users, pageable);
-            return ResponseEntity.status(HttpStatus.FOUND).body(result);
-
-        }catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
-        }
-    }
-
     @PatchMapping("users/update/{id}")
     public ResponseEntity<?> update(@RequestBody @Valid UpdateUserDTO updatedUser, BindingResult validation,
                                     @PathVariable("id") UUID id,
@@ -81,7 +65,7 @@ public class UserController {
         }
     }
 
-    @PutMapping("users/update/{id}")
+    @PutMapping("users/update/role/{id}")
     public ResponseEntity<?> updateRole(@RequestBody @Valid UpdateRoleUserDTO updatedRoleUser, BindingResult validation,
                                     @PathVariable("id") UUID id) {
         if (validation.hasErrors()) {

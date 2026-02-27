@@ -1,14 +1,11 @@
-package com.signature.autosave.web.controller;
+package com.signature.autosave.controller;
 
 import com.mercadopago.net.HttpStatus;
 import com.signature.autosave.modules.payment.payload.dto.PayloadResponseDTO;
 import com.signature.autosave.modules.payment.payload.service.PayloadService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +17,7 @@ import java.util.UUID;
 public class PayloadController {
     private final PayloadService payloadService;
 
-    @PostMapping
+    @GetMapping
     public ResponseEntity<?> listPayloads() {
         try {
             List<PayloadResponseDTO> result = payloadService.listPayloads();
@@ -31,8 +28,8 @@ public class PayloadController {
         }
     }
 
-    @PostMapping("{id}")
-    public ResponseEntity<?> listPayloads(@RequestParam UUID id) {
+    @GetMapping("{id}")
+    public ResponseEntity<?> listPayloads(@PathVariable UUID id) {
         try {
             List<PayloadResponseDTO> result = payloadService.listPayload(id);
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);

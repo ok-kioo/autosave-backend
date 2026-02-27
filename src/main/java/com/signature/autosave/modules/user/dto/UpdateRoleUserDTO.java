@@ -7,8 +7,6 @@ import lombok.Getter;
 
 @Getter
 public class UpdateRoleUserDTO {
-    private String username;
-
     @Enumerated(EnumType.STRING)
     private Role role;
 }

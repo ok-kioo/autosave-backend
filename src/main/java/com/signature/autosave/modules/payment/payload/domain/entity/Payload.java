@@ -12,6 +12,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
+@Entity
 @Table(name = "payload")
 public class Payload {
     @Id
