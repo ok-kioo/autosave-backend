@@ -55,7 +55,7 @@ public class EmailContentController {
     }
 
     @GetMapping("{id}")
-    public ResponseEntity<?> listEmailContents(@PathVariable UUID id) {
+    public ResponseEntity<?> listEmailContent(@PathVariable UUID id) {
         try {
             EmailContentResponseDTO result = emailContentService.listEmailContent(id);
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);

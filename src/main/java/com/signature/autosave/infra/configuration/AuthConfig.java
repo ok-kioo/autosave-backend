@@ -25,12 +25,16 @@ public class AuthConfig {
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/webhooks/mercadopago").permitAll()
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/users/update/").hasRole("ADMIN")
+                        .requestMatchers("/email/content/create", "/email/content/delete/", "/email/content", "/email/content/").hasAnyRole("EDITOR", "ADMIN", "REVIEWER")
+                        .requestMatchers("/email/campaign/create", "/email/campaign/delete/", "/email/campaign", "/email/campaign/").hasAnyRole("EDITOR", "ADMIN", "REVIEWER")
+                        .requestMatchers("/email/campaign/review/**").hasAnyRole("REVIEWER")
+                        .requestMatchers(HttpMethod.PUT, "/users/update/role/").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/payload", "payload/").hasAnyRole("BILLING_MANAGER", "ADMIN")
                         .anyRequest().authenticated()
                 )
