@@ -1,4 +1,4 @@
-package com.signature.autosave.controller;
+package com.signature.autosave.controller.payment;
 
 import com.mercadopago.net.HttpStatus;
 import com.signature.autosave.modules.payment.payload.dto.PayloadResponseDTO;

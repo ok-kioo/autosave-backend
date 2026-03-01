@@ -1,4 +1,4 @@
-package com.signature.autosave.controller;
+package com.signature.autosave.controller.user;
 
 import com.signature.autosave.modules.user.dto.*;
 import com.signature.autosave.modules.user.service.UserService;

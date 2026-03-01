@@ -1,4 +1,4 @@
-package com.signature.autosave.controller;
+package com.signature.autosave.controller.email;
 
 import com.mercadopago.net.HttpStatus;
 import com.signature.autosave.modules.email.content.dto.CreateEmailContentDTO;

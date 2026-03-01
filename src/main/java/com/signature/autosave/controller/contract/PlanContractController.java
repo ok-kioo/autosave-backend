@@ -1,4 +1,4 @@
-package com.signature.autosave.controller;
+package com.signature.autosave.controller.contract;
 
 import com.mercadopago.net.HttpStatus;
 import com.signature.autosave.modules.contract.dto.CreatePlanContractDTO;

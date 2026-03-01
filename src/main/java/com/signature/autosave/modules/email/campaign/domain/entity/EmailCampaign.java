@@ -35,7 +35,7 @@ public class EmailCampaign {
     )
     private List<SubscriptionPlan> subscriptionPlans;
 
-    @Column(name = "is_active", nullable = false)
-    private boolean isActive;
+    @Column(name = "is_available", nullable = false)
+    private boolean isAvailable;
 
 }

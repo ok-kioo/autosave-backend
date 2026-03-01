@@ -39,7 +39,7 @@ public class EmailCampaignBuilder {
         emailCampaign.setTextPreview(this.textPreview);
         emailCampaign.setEmailContent(this.emailContent);
         emailCampaign.setSubscriptionPlans(this.subscriptionPlans);
-        emailCampaign.setActive(false);
+        emailCampaign.setAvailable(false);
         return emailCampaign;
     }
 }

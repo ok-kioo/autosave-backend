@@ -1,4 +1,4 @@
-package com.signature.autosave.controller;
+package com.signature.autosave.controller.payment;
 
 import com.signature.autosave.modules.payment.method.dto.PaymentMethodResponseDTO;
 import com.signature.autosave.modules.payment.method.dto.RegisterPaymentMethodDTO;

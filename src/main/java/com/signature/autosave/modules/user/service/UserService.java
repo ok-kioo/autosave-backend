@@ -4,7 +4,10 @@ import com.signature.autosave.modules.user.builder.UserBuilder;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import com.signature.autosave.modules.user.dto.*;
+import com.signature.autosave.modules.user.service.events.UserCreatedEvent;
+import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,7 +21,9 @@ import java.util.UUID;
 public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final ApplicationEventPublisher publisher;
 
+    @Transactional
     public UserResponseDTO createUser(RegisterDTO registerDTO){
         userRepository.findByEmail(registerDTO.getEmail()).ifPresent(user -> {
             throw new IllegalArgumentException("Email já cadastrado");
@@ -33,6 +38,8 @@ public class UserService {
                     .build();
 
         userRepository.save(user);
+
+        publisher.publishEvent(new UserCreatedEvent(user.getId()));
 
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
@@ -73,6 +80,7 @@ public class UserService {
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
+    @Transactional
     public void deleteUser(DeleteUserDTO deleteUserDTO, UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
@@ -86,5 +94,7 @@ public class UserService {
         }
 
         userRepository.delete(user);
+
+        publisher.publishEvent(new UserDeletedEvent(user.getId()));
     }
 }

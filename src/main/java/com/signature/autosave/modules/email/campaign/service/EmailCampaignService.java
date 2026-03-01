@@ -7,6 +7,8 @@ import com.signature.autosave.modules.email.campaign.domain.repository.EmailCamp
 import com.signature.autosave.modules.email.campaign.dto.CreateEmailCampaignDTO;
 import com.signature.autosave.modules.email.campaign.dto.EmailCampaignResponseDTO;
 import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignApprovedEvent;
+import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignCreatedEvent;
+import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignDeletedEvent;
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.email.content.domain.repository.EmailContentRepository;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
@@ -16,6 +18,7 @@ import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -32,10 +35,12 @@ public class EmailCampaignService {
     private final SubscriptionPlanRepository subscriptionPlanRepository;
     private final UserRepository userRepository;
     private final IEmailComponent IEmailComponent;
+    private final ApplicationEventPublisher publisher;
 
     @Value("${app.frontend.url}")
     private String frontEndUrl;
 
+    @Transactional
     public EmailCampaignResponseDTO createEmailCampaign(CreateEmailCampaignDTO createEmailCampaignDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
@@ -59,12 +64,14 @@ public class EmailCampaignService {
 
         emailCampaignRepository.save(emailCampaign);
 
+        publisher.publishEvent(new EmailCampaignCreatedEvent(emailCampaign.getId()));
+
         return new EmailCampaignResponseDTO(
                 emailCampaign.getId(),
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isActive()
+                emailCampaign.isAvailable()
         );
     }
 
@@ -78,7 +85,7 @@ public class EmailCampaignService {
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isActive()
+                emailCampaign.isAvailable()
         );
     }
 
@@ -92,7 +99,7 @@ public class EmailCampaignService {
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isActive()
+                emailCampaign.isAvailable()
         )).toList();
     }
 
@@ -106,10 +113,11 @@ public class EmailCampaignService {
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isActive()
+                emailCampaign.isAvailable()
         )).toList();
     }
 
+    @Transactional
     public void deleteEmailCampaign(UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
@@ -122,6 +130,8 @@ public class EmailCampaignService {
         }
 
         emailCampaignRepository.delete(emailCampaign);
+
+        publisher.publishEvent(new EmailCampaignDeletedEvent(emailCampaign.getId()));
     }
 
     @EventListener
@@ -129,7 +139,7 @@ public class EmailCampaignService {
         EmailCampaign emailCampaign = emailCampaignRepository.findById(emailCampaignApprovedEvent.emailCampaign())
                 .orElseThrow(() -> new IllegalArgumentException("Campanha de email não encontrada"));
 
-        emailCampaign.setActive(true);
+        emailCampaign.setAvailable(true);
         emailCampaignRepository.save(emailCampaign);
 
         this.sendCampaign(emailCampaign);

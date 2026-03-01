@@ -27,6 +27,7 @@ import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -38,9 +39,12 @@ import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
-public class MPComponent implements IIntermediationComponent{
-    static {
-        MercadoPagoConfig.setAccessToken(System.getenv("MP_ACCESS_TOKEN"));
+public class MPComponent implements IIntermediationComponent {
+    private String accessToken;
+
+    public MPComponent(@Value("${app.mp.access.token}") String accessToken) {
+        MercadoPagoConfig.setAccessToken(accessToken);
+        this.accessToken = accessToken;
     }
 
     @Override
@@ -142,7 +146,7 @@ public class MPComponent implements IIntermediationComponent{
 
         HttpResponse<JsonNode> response = Unirest.post(
                         "https://api.mercadopago.com/preapproval_plan")
-                .header("Authorization", "Bearer " + System.getenv("MP_ACCESS_TOKEN"))
+                .header("Authorization", "Bearer " + accessToken)
                 .body(Map.of(
                         "reason", plan.getName(),
                         "auto_recurring", autoRecurring
@@ -167,7 +171,7 @@ public class MPComponent implements IIntermediationComponent{
 
         HttpResponse<JsonNode> response = Unirest.post(
                         "https://api.mercadopago.com/preapproval")
-                .header("Authorization", "Bearer " + System.getenv("MP_ACCESS_TOKEN"))
+                .header("Authorization", "Bearer " + accessToken)
                 .header("x-idempotency-key", idempotencyKey)
                 .header("Content-Type", "application/json")
                 .body(requestBody)
@@ -184,7 +188,7 @@ public class MPComponent implements IIntermediationComponent{
     public void cancelSubscription(String preapprovalId) {
         HttpResponse<JsonNode> response = Unirest.put(
                         "https://api.mercadopago.com/preapproval/" + preapprovalId)
-                .header("Authorization", "Bearer " + System.getenv("MP_ACCESS_TOKEN"))
+                .header("Authorization", "Bearer " + accessToken)
                 .header("Content-Type", "application/json")
                 .body(Map.of(
                         "status", "cancelled"
@@ -205,7 +209,7 @@ public class MPComponent implements IIntermediationComponent{
     public LocalDate getNextPaymentDate(String preapprovalId) {
         HttpResponse<JsonNode> response = Unirest.get(
                         "https://api.mercadopago.com/preapproval/" + preapprovalId)
-                .header("Authorization", "Bearer " + System.getenv("MP_ACCESS_TOKEN"))
+                .header("Authorization", "Bearer " + accessToken)
                 .asJson();
 
         if (response.getStatus() != 200) {

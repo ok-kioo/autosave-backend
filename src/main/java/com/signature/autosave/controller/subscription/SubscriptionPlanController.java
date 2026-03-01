@@ -1,4 +1,4 @@
-package com.signature.autosave.controller;
+package com.signature.autosave.controller.subscription;
 
 import com.signature.autosave.modules.subscription.dto.CreateSubscriptionPlanDTO;
 import com.signature.autosave.modules.subscription.dto.SubscriptionPlanResponseDTO;
