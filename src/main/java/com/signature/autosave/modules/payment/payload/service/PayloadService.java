@@ -37,7 +37,7 @@ public class PayloadService {
                 payload.getId(),
                 payload.getAmount(),
                 payload.getPaymentId(),
-                payload.getPayloadType(),
+                payload.getType(),
                 payload.getPlanContract());
     }
 
@@ -48,7 +48,7 @@ public class PayloadService {
                         payload.getId(),
                         payload.getAmount(),
                         payload.getPaymentId(),
-                        payload.getPayloadType(),
+                        payload.getType(),
                         payload.getPlanContract()
                 ))
                 .toList();    }
@@ -87,7 +87,7 @@ public class PayloadService {
         payload.setPaymentId(payment.getId());
         payload.setAmount(payment.getTransactionAmount());
         payload.setPaymentId(payment.getId());
-        payload.setPayloadType(PayloadType.PAYMENT);
+        payload.setType(PayloadType.PAYMENT);
         payload.setPlanContract(planContract);
 
         payloadRepository.save(payload);
@@ -100,7 +100,7 @@ public class PayloadService {
         payload.setPaymentId(payment.getId());
         payload.setAmount(payment.getTransactionAmount());
         payload.setPaymentId(payment.getId());
-        payload.setPayloadType(PayloadType.REFUND);
+        payload.setType(PayloadType.REFUND);
         payload.setPlanContract(planContract);
 
         payloadRepository.save(payload);

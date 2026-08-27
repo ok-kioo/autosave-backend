@@ -26,7 +26,7 @@ public class SubscriptionPlan {
     @Column(unique = true)
     private String name;
 
-    @Column(nullable = false)
+    @Column(precision = 19, scale = 2, nullable = false)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)

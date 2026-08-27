@@ -1,6 +1,6 @@
-package com.signature.autosave.modules.user.domain.entity;
+package com.signature.autosave.modules.user.domain.entity.node;
 
-import jakarta.persistence.Id;
+import org.springframework.data.neo4j.core.schema.Id;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -29,7 +29,7 @@ public class EmailContent {
     private String body;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "editor_id", referencedColumnName = "id")
     private User editor;
 
     @Column(name = "created_at", nullable = false, updatable = false)

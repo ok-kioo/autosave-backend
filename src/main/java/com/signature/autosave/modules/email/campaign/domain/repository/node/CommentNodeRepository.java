@@ -57,6 +57,10 @@ public interface CommentNodeRepository extends Neo4jRepository<CommentNode, UUID
     """)
     List<CommentThreadProjection> findComments(UUID campaignId);
 
+    @Query("""
+    MATCH (u:User {id: $userId})-[:WROTE]->(c:Comment {id: $commentId})
+    RETURN count(c) > 0
+    """)
     Boolean commentWrittenByUser(UUID commentId, UUID userId);
 
     @Query("""
