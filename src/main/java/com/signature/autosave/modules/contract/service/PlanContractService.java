@@ -55,10 +55,10 @@ public class PlanContractService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        PaymentMethod paymentMethod = paymentMethodRepository.findById(createPlanContractDTO.getPaymentMethod())
+        PaymentMethod paymentMethod = paymentMethodRepository.findById(createPlanContractDTO.paymentMethod())
                 .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
 
-        SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(createPlanContractDTO.getSubscriptionPlan(), true)
+        SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(createPlanContractDTO.subscriptionPlan(), true)
                 .orElseThrow(() -> new RuntimeException("Plano não encontrado"));
 
         if (user != paymentMethod.getUser()) {
@@ -67,7 +67,7 @@ public class PlanContractService {
 
         return switch (subscriptionPlan.getBillingCycle()) {
             case ANNUALLY ->
-                    createAnnuallyPayment(paymentMethod, subscriptionPlan, createPlanContractDTO.getInstallments(), idempotencyKey);
+                    createAnnuallyPayment(paymentMethod, subscriptionPlan, createPlanContractDTO.installments(), idempotencyKey);
             case MONTHLY -> createMonthlyPayment(paymentMethod, subscriptionPlan, idempotencyKey);
         };
     }

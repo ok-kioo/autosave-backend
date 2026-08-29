@@ -45,7 +45,7 @@ public class EmailCampaignService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-        EmailContent emailContent = emailContentRepository.findById(createEmailCampaignDTO.getEmailContent())
+        EmailContent emailContent = emailContentRepository.findById(createEmailCampaignDTO.emailContent())
                 .orElseThrow(() -> new IllegalArgumentException("Conteúdo de email não encontrado"));
 
         if(emailContent.getEditor() != user){
@@ -57,7 +57,7 @@ public class EmailCampaignService {
         );
 
         EmailCampaign emailCampaign = EmailCampaignBuilder.builder()
-                .withTextPreview(createEmailCampaignDTO.getTextPreview())
+                .withTextPreview(createEmailCampaignDTO.textPreview())
                 .withEmailContent(emailContent)
                 .withSubscriptionPlans(emailCampaignSubscriptionPlans)
                 .build();

@@ -25,15 +25,15 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO createUser(RegisterDTO registerDTO){
-        userRepository.findByEmail(registerDTO.getEmail()).ifPresent(user -> {
+        userRepository.findByEmail(registerDTO.email()).ifPresent(user -> {
             throw new IllegalArgumentException("Email já cadastrado");
         });
 
-        String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
+        String encodedPassword = passwordEncoder.encode(registerDTO.password());
 
         User user = UserBuilder.builder()
-                    .withName(registerDTO.getName())
-                    .withEmail(registerDTO.getEmail())
+                    .withName(registerDTO.name())
+                    .withEmail(registerDTO.email())
                     .withPassword(encodedPassword)
                     .build();
 
@@ -56,13 +56,13 @@ public class UserService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-        Optional.ofNullable(updateUserDTO.getEmail())
+        Optional.ofNullable(updateUserDTO.email())
                 .ifPresent(user::setEmail);
 
-        Optional.ofNullable(updateUserDTO.getName())
+        Optional.ofNullable(updateUserDTO.name())
                 .ifPresent(user::setName);
 
-        Optional.ofNullable(updateUserDTO.getPassword())
+        Optional.ofNullable(updateUserDTO.password())
                 .ifPresent(password -> user.setPassword(passwordEncoder.encode(password)));
 
         userRepository.save(user);
@@ -74,7 +74,7 @@ public class UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-        user.setRole(updateRoleUserDTO.getRole());
+        user.setRole(updateRoleUserDTO.role());
         userRepository.save(user);
 
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
@@ -89,7 +89,7 @@ public class UserService {
             throw new IllegalArgumentException("Id do usuário não corresponde ao usuário autenticado");
         }
 
-        if(!user.getPassword().equals(deleteUserDTO.getPassword())){
+        if(!user.getPassword().equals(deleteUserDTO.password())){
             throw new IllegalArgumentException("Senha incorreta");
         }
 

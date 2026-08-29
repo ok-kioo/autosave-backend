@@ -50,17 +50,17 @@ public class CampaignNodeService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        if(user.getId() != registerCampaignNodeViewDTO.getUserId()) {
+        if(user.getId() != registerCampaignNodeViewDTO.userId()) {
             throw new RuntimeException("Usuário autenticado não corresponde ao usuário fornecido");
         }
 
-        campaignNodeRepository.findById(registerCampaignNodeViewDTO.getEmailCampaignId())
+        campaignNodeRepository.findById(registerCampaignNodeViewDTO.emailCampaignId())
                 .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
 
-        userNodeRepository.findById(registerCampaignNodeViewDTO.getUserId())
+        userNodeRepository.findById(registerCampaignNodeViewDTO.userId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        campaignNodeRepository.registerView(registerCampaignNodeViewDTO.getUserId(), registerCampaignNodeViewDTO.getEmailCampaignId());
+        campaignNodeRepository.registerView(registerCampaignNodeViewDTO.userId(), registerCampaignNodeViewDTO.emailCampaignId());
     }
 
     public Long countViews(UUID emailCampaignId) {
@@ -74,17 +74,17 @@ public class CampaignNodeService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        if(user.getId() != toggleLikeCampaignNodeDTO.getUserId()) {
+        if(user.getId() != toggleLikeCampaignNodeDTO.userId()) {
             throw new RuntimeException("Usuário autenticado não corresponde ao usuário fornecido");
         }
 
-        campaignNodeRepository.findById(toggleLikeCampaignNodeDTO.getEmailCampaignId())
+        campaignNodeRepository.findById(toggleLikeCampaignNodeDTO.emailCampaignId())
                 .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
 
-        userNodeRepository.findById(toggleLikeCampaignNodeDTO.getUserId())
+        userNodeRepository.findById(toggleLikeCampaignNodeDTO.userId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        return campaignNodeRepository.toggleLike(toggleLikeCampaignNodeDTO.getUserId(), toggleLikeCampaignNodeDTO.getEmailCampaignId());
+        return campaignNodeRepository.toggleLike(toggleLikeCampaignNodeDTO.userId(), toggleLikeCampaignNodeDTO.emailCampaignId());
     }
 
     public Long countLikes(UUID campaignId) {
@@ -98,38 +98,40 @@ public class CampaignNodeService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        if(user.getId() != registerCampaignCommentDTO.getUserId()) {
+        if(user.getId() != registerCampaignCommentDTO.userId()) {
             throw new RuntimeException("Usuário autenticado não corresponde ao usuário fornecido");
         }
 
-        campaignNodeRepository.findById(registerCampaignCommentDTO.getEmailCampaignId())
+        campaignNodeRepository.findById(registerCampaignCommentDTO.emailCampaignId())
                 .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
 
-        userNodeRepository.findById(registerCampaignCommentDTO.getUserId())
+        userNodeRepository.findById(registerCampaignCommentDTO.userId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         UUID newCommentId = UUID.randomUUID();
 
-        return commentNodeRepository.registerCampaignComment(registerCampaignCommentDTO.getUserId(), registerCampaignCommentDTO.getEmailCampaignId(), newCommentId, registerCampaignCommentDTO.getText());
+        return commentNodeRepository.registerCampaignComment(registerCampaignCommentDTO.userId(),
+                registerCampaignCommentDTO.emailCampaignId(), newCommentId, registerCampaignCommentDTO.text());
     }
 
     public CommentThreadProjection registerReplyComment(RegisterReplyCommentDTO registerReplyCommentDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        if(user.getId() != registerReplyCommentDTO.getUserId()) {
+        if(user.getId() != registerReplyCommentDTO.userId()) {
             throw new RuntimeException("Usuário autenticado não corresponde ao usuário fornecido");
         }
 
-        commentNodeRepository.findById(registerReplyCommentDTO.getParentCommentId())
+        commentNodeRepository.findById(registerReplyCommentDTO.parentCommentId())
                 .orElseThrow(() -> new RuntimeException("Comentário pai não encontrado"));
 
-        userNodeRepository.findById(registerReplyCommentDTO.getUserId())
+        userNodeRepository.findById(registerReplyCommentDTO.userId())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
         UUID newCommentId = UUID.randomUUID();
 
-        return commentNodeRepository.replyComment(registerReplyCommentDTO.getUserId(), registerReplyCommentDTO.getParentCommentId(), newCommentId, registerReplyCommentDTO.getText());
+        return commentNodeRepository.replyComment(registerReplyCommentDTO.userId(),
+                registerReplyCommentDTO.parentCommentId(), newCommentId, registerReplyCommentDTO.text());
     }
 
     public List<CommentThreadProjection> listComments(UUID campaignId) {

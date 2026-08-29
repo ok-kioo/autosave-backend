@@ -21,10 +21,10 @@ public class AuthService implements UserDetailsService {
     private final IAuthComponent jwtComponent;
 
     public AuthResponseDTO login(LoginDTO user) {
-        User existingUser = userRepository.findByEmail(user.getEmail())
+        User existingUser = userRepository.findByEmail(user.email())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário com este e-mail não existe"));
 
-        if(!passwordEncoder.matches(user.getPassword(), existingUser.getPassword())){
+        if(!passwordEncoder.matches(user.password(), existingUser.getPassword())){
             throw new IllegalArgumentException("Senha incorreta");
         }
 

@@ -5,22 +5,20 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lombok.Getter;
 
 import java.math.BigDecimal;
 
-@Getter
-public class UpdateSubscriptionPlanDTO {
-    private String name;
+public record UpdateSubscriptionPlanDTO(String name,
 
-    private BigDecimal price;
+                                        BigDecimal price,
 
-    @Enumerated(EnumType.STRING)
-    private BillingCycle billingCycle;
+                                        @Enumerated(EnumType.STRING)
+                                        BillingCycle billingCycle,
 
-    private String description;
+                                        String description,
 
-    @Min(0)
-    @Max(365)
-    private Integer trialDays;
+                                        @Min(0)
+                                        @Max(365)
+                                        Integer trialDays) {
+
 }

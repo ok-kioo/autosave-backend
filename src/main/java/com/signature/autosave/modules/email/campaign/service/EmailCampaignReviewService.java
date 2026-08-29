@@ -35,7 +35,7 @@ public class EmailCampaignReviewService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
-        EmailCampaign emailCampaign = emailCampaignRepository.findById(createEmailCampaignReviewDTO.getEmailCampaign())
+        EmailCampaign emailCampaign = emailCampaignRepository.findById(createEmailCampaignReviewDTO.emailCampaign())
                 .orElseThrow(() -> new IllegalArgumentException("Conteúdo de email não encontrado"));
 
         List<EmailCampaignReview> emailCampaignReviews = emailCampaignReviewRepository.findByEmailCampaign(emailCampaign);
@@ -46,8 +46,8 @@ public class EmailCampaignReviewService {
 
         EmailCampaignReview emailCampaignReview = EmailCampaignReviewBuilder.builder()
                 .withEmailCampaign(emailCampaign)
-                .withComment(createEmailCampaignReviewDTO.getComment())
-                .withStatus(createEmailCampaignReviewDTO.getStatus())
+                .withComment(createEmailCampaignReviewDTO.comment())
+                .withStatus(createEmailCampaignReviewDTO.status())
                 .withReviewer(user)
                 .build();
 
@@ -76,8 +76,8 @@ public class EmailCampaignReviewService {
             throw new IllegalArgumentException("Apenas o revisor pode atualizar a avaliação");
         }
 
-        Optional.ofNullable(updateEmailCampaignReviewDTO.getComment()).ifPresent(emailCampaignReview::setComment);
-        Optional.ofNullable(updateEmailCampaignReviewDTO.getStatus()).ifPresent(emailCampaignReview::setStatus);
+        Optional.ofNullable(updateEmailCampaignReviewDTO.comment()).ifPresent(emailCampaignReview::setComment);
+        Optional.ofNullable(updateEmailCampaignReviewDTO.status()).ifPresent(emailCampaignReview::setStatus);
 
         emailCampaignReviewRepository.save(emailCampaignReview);
 

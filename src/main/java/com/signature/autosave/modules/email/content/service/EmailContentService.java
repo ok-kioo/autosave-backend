@@ -39,9 +39,9 @@ public class EmailContentService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
 
         EmailContent emailContent = EmailContentBuilder.builder()
-                .withTopic(createEmailContentDTO.getTopic().name())
-                .withSubject(createEmailContentDTO.getTitle())
-                .withBody(createEmailContentDTO.getBody())
+                .withTopic(createEmailContentDTO.topic().name())
+                .withSubject(createEmailContentDTO.title())
+                .withBody(createEmailContentDTO.body())
                 .withEditor(user)
                 .withCreatedAt(LocalDateTime.now())
                 .build();
@@ -105,11 +105,11 @@ public class EmailContentService {
             throw new IllegalArgumentException("O conteúdo só pode ser editado se for requisitado por um avaliador");
         }
 
-        Optional.ofNullable(updateEmailContentDTO.getTopic())
+        Optional.ofNullable(updateEmailContentDTO.topic())
                 .ifPresent(topic -> emailContent.setTopic(topic.name()));
-        Optional.ofNullable(updateEmailContentDTO.getTitle())
+        Optional.ofNullable(updateEmailContentDTO.title())
                 .ifPresent(emailContent::setSubject);
-        Optional.ofNullable(updateEmailContentDTO.getBody())
+        Optional.ofNullable(updateEmailContentDTO.body())
                 .ifPresent(emailContent::setBody);
 
         emailContentRepository.save(emailContent);

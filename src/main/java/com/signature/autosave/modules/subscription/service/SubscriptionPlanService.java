@@ -23,11 +23,11 @@ public class SubscriptionPlanService {
 
     public SubscriptionPlanResponseDTO createSubscriptionPlan(CreateSubscriptionPlanDTO createDTO){
         SubscriptionPlan subscriptionPlan = SubscriptionPlanBuilder.builder()
-                    .withName(createDTO.getName())
-                    .withPrice(createDTO.getPrice())
-                    .withBillingCycle(createDTO.getBillingCycle())
-                    .withDescription(createDTO.getDescription())
-                    .withTrialDays(createDTO.getTrialDays())
+                    .withName(createDTO.name())
+                    .withPrice(createDTO.price())
+                    .withBillingCycle(createDTO.billingCycle())
+                    .withDescription(createDTO.description())
+                    .withTrialDays(createDTO.trialDays())
                     .build();
 
         String preapprovalPlanId = mpComponent.createPreapprovalPlan(subscriptionPlan);
@@ -57,11 +57,11 @@ public class SubscriptionPlanService {
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
                 .orElseThrow(() -> new IllegalArgumentException("Plano não encontrado"));
 
-        Optional.ofNullable(updateSubscriptionPlanDTO.getName()).ifPresent(subscriptionPlan::setName);
-        Optional.ofNullable(updateSubscriptionPlanDTO.getPrice()).ifPresent(subscriptionPlan::setPrice);
-        Optional.ofNullable(updateSubscriptionPlanDTO.getBillingCycle()).ifPresent(subscriptionPlan::setBillingCycle);
-        Optional.ofNullable(updateSubscriptionPlanDTO.getDescription()).ifPresent(subscriptionPlan::setDescription);
-        Optional.ofNullable(updateSubscriptionPlanDTO.getTrialDays()).ifPresent(subscriptionPlan::setTrialDays);
+        Optional.ofNullable(updateSubscriptionPlanDTO.name()).ifPresent(subscriptionPlan::setName);
+        Optional.ofNullable(updateSubscriptionPlanDTO.price()).ifPresent(subscriptionPlan::setPrice);
+        Optional.ofNullable(updateSubscriptionPlanDTO.billingCycle()).ifPresent(subscriptionPlan::setBillingCycle);
+        Optional.ofNullable(updateSubscriptionPlanDTO.description()).ifPresent(subscriptionPlan::setDescription);
+        Optional.ofNullable(updateSubscriptionPlanDTO.trialDays()).ifPresent(subscriptionPlan::setTrialDays);
 
         subscriptionPlanRepository.save(subscriptionPlan);
 

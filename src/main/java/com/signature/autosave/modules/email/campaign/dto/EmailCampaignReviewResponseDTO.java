@@ -5,19 +5,12 @@ import com.signature.autosave.modules.email.campaign.domain.enums.EmailCampaignS
 
 import java.util.UUID;
 
-public class EmailCampaignReviewResponseDTO {
-    private UUID id;
+public record EmailCampaignReviewResponseDTO (UUID id,
 
-    private EmailCampaignStatus status;
+                                             EmailCampaignStatus status,
 
-    private String comment;
+                                             String comment,
 
-    private EmailCampaign emailCampaign;
+                                             EmailCampaign emailCampaign) {
 
-    public EmailCampaignReviewResponseDTO(UUID id, EmailCampaignStatus status, String comment, EmailCampaign emailCampaign) {
-        this.id = id;
-        this.status = status;
-        this.comment = comment;
-        this.emailCampaign = emailCampaign;
-    }
 }
