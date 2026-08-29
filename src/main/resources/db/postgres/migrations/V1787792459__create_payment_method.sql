@@ -6,6 +6,7 @@ CREATE TABLE payment_method (
     document_number VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     user_id UUID NOT NULL,
 
     CONSTRAINT fk_payment_method_user FOREIGN KEY (user_id) REFERENCES users (id),

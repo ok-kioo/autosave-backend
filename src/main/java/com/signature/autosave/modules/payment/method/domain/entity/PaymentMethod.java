@@ -4,6 +4,7 @@ import com.signature.autosave.modules.payment.method.domain.enums.PaymentMethodT
 import com.signature.autosave.modules.user.domain.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,7 +22,7 @@ public class PaymentMethod {
     @Column(columnDefinition = "UUID")
     private UUID id;
 
-    @NotBlank
+    @NotNull
     @Enumerated(EnumType.STRING)
     private PaymentMethodType type;
 
@@ -34,13 +35,18 @@ public class PaymentMethod {
     @NotBlank
     private String documentNumber;
 
-    @NotBlank
+    @NotNull
     private LocalDateTime createdAt;
 
+    @NotNull
+    @Column(name="is_active")
+    private boolean isActive = true;
+
+    @NotNull
     @Column(name = "is_default")
     private boolean isDefault;
 
-    @NotBlank
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;

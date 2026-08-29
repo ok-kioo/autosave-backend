@@ -3,6 +3,7 @@ package com.signature.autosave.modules.email.campaign.domain.entity;
 import com.signature.autosave.modules.email.campaign.domain.enums.EmailCampaignStatus;
 import com.signature.autosave.modules.user.domain.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +24,7 @@ public class EmailCampaignReview {
     @Enumerated(EnumType.STRING)
     private EmailCampaignStatus status;
 
-    @NotNull
+    @NotBlank
     private String comment;
 
     @JoinColumn(name = "email_campaign_id", referencedColumnName = "id")

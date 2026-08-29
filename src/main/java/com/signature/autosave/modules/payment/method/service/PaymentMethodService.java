@@ -56,7 +56,7 @@ public class PaymentMethodService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        return paymentMethodRepository.findAllByUserId(user.getId())
+        return paymentMethodRepository.findAllByUserIdAndIsActiveTrue(user.getId())
                 .stream()
                 .map(method -> {
                     try {
@@ -73,7 +73,7 @@ public class PaymentMethodService {
         User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
-        PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
+        PaymentMethod paymentMethod = paymentMethodRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
 
         return responseDTOBuild(paymentMethod, user);
@@ -116,15 +116,19 @@ public class PaymentMethodService {
         }
 
         if(paymentMethod instanceof CreditCardPaymentMethod creditCardPaymentMethod){
-            paymentMethodRepository.delete(creditMethodRepository.findById(paymentMethod.getId())
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado")));
+            creditMethodRepository.findById(paymentMethod.getId())
+                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
 
-            new CustomerCardClient().delete(creditCardPaymentMethod.getCustomerId(), creditCardPaymentMethod.getCustomerCardId());
+            paymentMethodRepository.setPaymentMethodAsNonActive(paymentMethod.getId());
+
+            //new CustomerCardClient().delete(creditCardPaymentMethod.getCustomerId(), creditCardPaymentMethod.getCustomerCardId());
         }
 
         if(paymentMethod instanceof PixPaymentMethod) {
-            paymentMethodRepository.delete(pixMethodRepository.findById(paymentMethod.getId())
-                    .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado")));
+            pixMethodRepository.findById(paymentMethod.getId())
+                    .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+
+            paymentMethodRepository.setPaymentMethodAsNonActive(paymentMethod.getId());
         }
     }
 

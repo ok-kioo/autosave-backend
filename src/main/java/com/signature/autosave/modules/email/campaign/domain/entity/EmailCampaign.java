@@ -3,7 +3,7 @@ package com.signature.autosave.modules.email.campaign.domain.entity;
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,7 +20,7 @@ public class EmailCampaign {
     @Column(columnDefinition = "UUID")
     private UUID id;
 
-    @NotNull
+    @NotBlank
     private String textPreview;
 
     @JoinColumn(name = "email_content_id", referencedColumnName = "id")
