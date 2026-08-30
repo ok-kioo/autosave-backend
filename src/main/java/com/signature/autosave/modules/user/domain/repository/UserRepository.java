@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
-    Optional<User> findByIdAndIsActiveTrue(UUID id);
+        Optional<User> findByIdAndIsActiveTrue(UUID id);
     Optional<User> findByEmailAndIsActiveTrue(String email);
 
     @Modifying

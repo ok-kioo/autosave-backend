@@ -10,6 +10,7 @@ import com.signature.autosave.modules.email.campaign.dto.CreateEmailCampaignRevi
 import com.signature.autosave.modules.email.campaign.dto.EmailCampaignReviewResponseDTO;
 import com.signature.autosave.modules.email.campaign.dto.UpdateEmailCampaignReviewDTO;
 import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignApprovedEvent;
+import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignDeletedEvent;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.Optional;
@@ -164,11 +167,22 @@ public class EmailCampaignReviewService {
             throw new IllegalArgumentException("You do not have permission to delete this review.");
         }
 
-        emailCampaignReviewRepository.delete(emailCampaignReview);
+        emailCampaignReviewRepository.setEmailCampaignReviewAsNonActive(emailCampaignReview);
     }
 
     private void emailCampaignApproved(EmailCampaign emailCampaign){
         publisher.publishEvent(new EmailCampaignApprovedEvent(emailCampaign.getId()));
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void cascadeDeleteEmailCampaigns(EmailCampaignDeletedEvent event) {
+
+        EmailCampaign emailCampaign = emailCampaignRepository.findById(event.emailCampaignId())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        emailCampaignReviewRepository
+                .findAllByUserIdAndIsActiveTrue(emailCampaign.getEmailContent().getEditor().getId())
+                .forEach(emailCampaignReviewRepository::setEmailCampaignReviewAsNonActive);
     }
 
 }

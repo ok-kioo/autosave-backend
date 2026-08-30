@@ -46,6 +46,6 @@ public class EmailCampaign {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "disabled_at")
-    private boolean disabledAt;
+    private LocalDateTime disabledAt;
 
 }

@@ -53,7 +53,7 @@ public class User implements UserDetails {
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @Column(name = "disabled_at")
-    private boolean disabledAt;
+    private LocalDateTime disabledAt;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

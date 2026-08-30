@@ -13,6 +13,7 @@ import com.signature.autosave.modules.email.campaign.service.events.EmailCampaig
 import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignDeletedEvent;
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.email.content.domain.repository.EmailContentRepository;
+import com.signature.autosave.modules.email.content.service.events.EmailContentDeletedEvent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import com.signature.autosave.modules.subscription.domain.repository.SubscriptionPlanRepository;
 import com.signature.autosave.modules.user.domain.entity.User;
@@ -27,6 +28,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.UUID;
@@ -186,6 +189,20 @@ public class EmailCampaignService {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void cascadeDeleteEmailCampaigns(EmailContentDeletedEvent event) {
+
+        EmailContent emailContent = emailContentRepository.findById(event.emailContentId())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        emailCampaignRepository
+                .findAllByUserIdAndIsActiveTrue(emailContent.getEditor().getId())
+                .forEach(emailCampaign -> {
+                    emailCampaignRepository.setEmailCampaignAsNonActive(emailCampaign);
+                    publisher.publishEvent(new EmailCampaignDeletedEvent(emailCampaign.getId()));
+                });
     }
 
 }

@@ -4,7 +4,9 @@ import com.signature.autosave.modules.email.campaign.domain.entity.EmailCampaign
 import com.signature.autosave.modules.email.campaign.domain.entity.EmailCampaignReview;
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.user.domain.entity.User;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,5 +27,26 @@ public interface EmailCampaignReviewRepository extends JpaRepository<EmailCampai
 
 
     List<EmailCampaignReview> findByReviewerAndIsActiveTrue(@Param("user") User user);
+
+    @Modifying
+    @Transactional
+    @Query("""
+    UPDATE EmailCampaignReview ecr
+    SET ecr.isActive = false,
+        ecr.isAvailable = false,
+        ecr.disabledAt = CURRENT_TIMESTAMP
+    WHERE ecr = :emailCampaignReview
+""")
+    void setEmailCampaignReviewAsNonActive(@Param("emailCampaignReview") EmailCampaignReview emailCampaignReview);
+
+    @Query("""
+    SELECT ecr
+    FROM EmailCampaignReview ecr
+    WHERE ecr.emailCampaign.emailContent.editor.id = :userId
+      AND ecr.isActive = true
+""")
+    List<EmailCampaignReview> findAllByUserIdAndIsActiveTrue(
+            @Param("userId") UUID userId
+    );
 
 }

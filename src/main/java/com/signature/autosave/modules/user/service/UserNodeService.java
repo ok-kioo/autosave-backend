@@ -22,15 +22,15 @@ public class UserNodeService {
         User user = userRepository.findByIdAndIsActiveTrue(event.user())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        UserNode userNode = new UserNode(user.getId(), user.getName());
+        UserNode userNode = new UserNode(user.getId(), user.getName(), null, true);
         userNodeRepository.save(userNode);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void deleteUserNode(UserDeletedEvent event){
-        userNodeRepository.findById(event.user())
+    public void deleteUserNode(UserDeletedEvent event) {
+        userNodeRepository.findActiveById(event.userId())
                 .orElseThrow(() -> new RuntimeException("User node not found"));
 
-        userNodeRepository.deleteById(event.user());
+        userNodeRepository.softDelete(event.userId());
     }
 }

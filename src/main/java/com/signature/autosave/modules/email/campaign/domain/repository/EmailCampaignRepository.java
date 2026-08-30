@@ -9,11 +9,22 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface EmailCampaignRepository extends JpaRepository<EmailCampaign, UUID> {
     Optional<EmailCampaign> findByIdAndIsActiveTrue(UUID id);
+
+    @Query("""
+    SELECT ec
+    FROM EmailCampaign ec
+    WHERE ec.emailContent.editor.id = :userId
+      AND ec.isActive = true
+""")
+    List<EmailCampaign> findAllByUserIdAndIsActiveTrue(
+            @Param("userId") UUID userId
+    );
 
     @Query(
             value = """

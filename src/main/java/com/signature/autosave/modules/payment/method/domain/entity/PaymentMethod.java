@@ -47,7 +47,7 @@ public class PaymentMethod {
     private boolean isActive = true;
 
     @Column(name = "disabled_at")
-    private boolean disabledAt;
+    private LocalDateTime disabledAt;
 
     @NotNull
     @Column(name = "is_default")

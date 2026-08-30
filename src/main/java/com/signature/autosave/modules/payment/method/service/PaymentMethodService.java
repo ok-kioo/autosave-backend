@@ -18,12 +18,15 @@ import com.signature.autosave.modules.payment.method.domain.repository.PixPaymen
 import com.signature.autosave.modules.payment.method.dto.*;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
+import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -226,5 +229,20 @@ public class PaymentMethodService {
                 .withCreatedAt(LocalDateTime.now())
                 .withIsDefault(registerPaymentMethodDTO.isDefault())
                 .withUser(user).build();
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void cascadeDeletePaymentMethods(UserDeletedEvent event) {
+
+        User user = userRepository.findById(event.userId())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        paymentMethodRepository
+                .findAllByUserIdAndIsActiveTrue(user.getId())
+                .forEach(paymentMethod ->
+                        paymentMethodRepository.setPaymentMethodAsNonActive(
+                                paymentMethod.getId()
+                        )
+                );
     }
 }

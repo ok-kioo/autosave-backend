@@ -40,5 +40,5 @@ public class EmailContent {
     private boolean isActive = true;
 
     @Column(name = "disabled_at")
-    private boolean disabledAt;
+    private LocalDateTime disabledAt;
 }

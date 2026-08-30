@@ -27,7 +27,7 @@ public class CampaignNodeController {
     public ResponseEntity<?> registerView(@RequestBody RegisterCampaignNodeViewDTO registerCampaignNodeViewDTO, @AuthenticationPrincipal UserDetails userDetails) {
         try {
             campaignNodeService.registerView(registerCampaignNodeViewDTO, userDetails);
-            return ResponseEntity.ok(Map.of("message", "Visualização registrada"));
+            return ResponseEntity.ok(Map.of("message", "View registered"));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));

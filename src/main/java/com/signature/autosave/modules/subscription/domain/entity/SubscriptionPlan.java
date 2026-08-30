@@ -54,6 +54,6 @@ public class SubscriptionPlan {
     private Boolean isActive = true;
 
     @Column(name = "disabled_at")
-    private boolean disabledAt;
+    private LocalDateTime disabledAt;
 
 }

@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Node("User")
@@ -20,4 +21,8 @@ public class UserNode {
     private UUID id;
 
     private String name;
+
+    private LocalDateTime disabledAt;
+
+    private boolean isActive = true;
 }

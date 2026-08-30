@@ -25,4 +25,8 @@ public class CommentNode {
     private String text;
 
     private LocalDateTime dateTime;
+
+    private boolean isActive = true;
+
+    private LocalDateTime disabledAt;
 }
