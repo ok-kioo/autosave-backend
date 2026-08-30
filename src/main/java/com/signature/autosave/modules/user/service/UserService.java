@@ -25,7 +25,7 @@ public class UserService {
 
     @Transactional
     public UserResponseDTO createUser(RegisterDTO registerDTO){
-        userRepository.findByEmail(registerDTO.email()).ifPresent(user -> {
+        userRepository.findByEmailAndIsActiveTrue(registerDTO.email()).ifPresent(user -> {
             throw new IllegalArgumentException("Email already registered.");
         });
 
@@ -46,14 +46,14 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponseDTO list(UUID id){
-        User user = userRepository.findById(id)
+        User user = userRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
     public UserResponseDTO updateUser(UpdateUserDTO updateUserDTO, UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         Optional.ofNullable(updateUserDTO.email())
@@ -71,7 +71,7 @@ public class UserService {
     }
 
     public UserResponseDTO updateRoleUser(UpdateRoleUserDTO updateRoleUserDTO, UUID id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         user.setRole(updateRoleUserDTO.role());
@@ -82,7 +82,7 @@ public class UserService {
 
     @Transactional
     public void deleteUser(DeleteUserDTO deleteUserDTO, UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         if (!user.getId().equals(id)) {
@@ -93,7 +93,7 @@ public class UserService {
             throw new IllegalArgumentException("Wrong password.");
         }
 
-        userRepository.delete(user);
+        userRepository.setUserAsNonActive(user);
 
         publisher.publishEvent(new UserDeletedEvent(user.getId()));
     }

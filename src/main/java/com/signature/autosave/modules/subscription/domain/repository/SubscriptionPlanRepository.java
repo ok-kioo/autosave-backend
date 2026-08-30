@@ -2,8 +2,10 @@ package com.signature.autosave.modules.subscription.domain.repository;
 
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -13,6 +15,16 @@ import java.util.UUID;
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, UUID> {
     Optional<SubscriptionPlan> findByIdAndIsActive(UUID uuid, boolean isActive);
     Optional<SubscriptionPlan> findByIsActive(boolean isActive);
+
+    @Modifying
+    @Transactional
+    @Query("""
+    UPDATE SubscriptionPlan sp
+    SET sp.isActive = false,
+        sp.disabledAt = CURRENT_TIMESTAMP
+    WHERE sp = :subscriptionPlan
+""")
+    void setSubscriptionPlanAsNonActive(@Param("subscriptionPlan") SubscriptionPlan subscriptionPlan);
 
     @Query("""
         SELECT sp

@@ -38,7 +38,7 @@ public class PaymentMethodService {
 
     @Transactional
     public PaymentMethodResponseDTO createPaymentMethod(RegisterPaymentMethodDTO registerPaymentMethod, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         if (registerPaymentMethod.isDefault()) {
@@ -53,7 +53,7 @@ public class PaymentMethodService {
 
     @Transactional(readOnly = true)
     public List<PaymentMethodResponseDTO> listPaymentMethods(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         return paymentMethodRepository.findAllByUserIdAndIsActiveTrue(user.getId())
@@ -70,7 +70,7 @@ public class PaymentMethodService {
 
     @Transactional(readOnly = true)
     public PaymentMethodResponseDTO listPaymentMethod(UUID id, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findByIdAndIsActiveTrue(id)
@@ -80,7 +80,7 @@ public class PaymentMethodService {
     }
 
     public PaymentMethodResponseDTO updatePaymentMethod(UUID id, UpdatePaymentMethodDTO updatePaymentMethodDTO, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
@@ -101,7 +101,7 @@ public class PaymentMethodService {
     }
 
     public void deletePaymentMethod(UUID id, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)

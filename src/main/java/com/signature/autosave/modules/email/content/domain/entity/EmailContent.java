@@ -33,5 +33,12 @@ public class EmailContent {
     private User editor;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @NotNull
+    @Column(name = "is_active")
+    private boolean isActive = true;
+
+    @Column(name = "disabled_at")
+    private boolean disabledAt;
 }

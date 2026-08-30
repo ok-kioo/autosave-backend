@@ -80,7 +80,6 @@ public class SubscriptionPlanService {
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
                 .orElseThrow(() -> new IllegalArgumentException("Plan not found."));
 
-        subscriptionPlan.setIsActive(false);
-        subscriptionPlanRepository.save(subscriptionPlan);
+        subscriptionPlanRepository.setSubscriptionPlanAsNonActive(subscriptionPlan);
     }
 }

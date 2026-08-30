@@ -19,7 +19,7 @@ public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, UU
 
     @Modifying
     @Transactional
-    @Query("UPDATE PaymentMethod p SET p.isActive = false WHERE p.id = :id")
+    @Query("UPDATE PaymentMethod p SET p.isActive = false, p.disabledAt = CURRENT_TIMESTAMP WHERE p.id = :id")
     void setPaymentMethodAsNonActive(@Param("id") UUID id);
 
     Optional<PaymentMethod> findByIdAndIsActiveTrue(UUID id);

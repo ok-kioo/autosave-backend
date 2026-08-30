@@ -52,7 +52,7 @@ public class PlanContractService {
             throw new RuntimeException("Requisition already processed.");
         }
 
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(createPlanContractDTO.paymentMethod())
@@ -73,7 +73,7 @@ public class PlanContractService {
     }
 
     public PlanContractResponseDTO cancelPlanContract(UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         PlanContract planContract = planContractRepository.findById(id)
@@ -97,7 +97,7 @@ public class PlanContractService {
     }
 
     public PlanContractResponseDTO refundPlanContract(UUID id, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         PlanContract planContract = planContractRepository.findById(id)
@@ -138,7 +138,7 @@ public class PlanContractService {
 
     @Transactional(readOnly = true)
     public PlanContractResponseDTO listPlanContract(UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         PlanContract planContract = planContractRepository.findById(id)
@@ -154,7 +154,7 @@ public class PlanContractService {
 
     @Transactional(readOnly = true)
     public List<PlanContractResponseDTO> listPlanContracts(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         return planContractRepository.findAllByUserId(user.getId())

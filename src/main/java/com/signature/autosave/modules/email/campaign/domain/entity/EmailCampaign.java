@@ -4,9 +4,11 @@ import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +37,15 @@ public class EmailCampaign {
     )
     private List<SubscriptionPlan> subscriptionPlans;
 
+    @NotNull
     @Column(name = "is_available", nullable = false)
-    private boolean isAvailable;
+    private boolean isAvailable = false;
+
+    @NotNull
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "disabled_at")
+    private boolean disabledAt;
 
 }

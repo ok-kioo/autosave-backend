@@ -16,13 +16,14 @@ public interface EmailCampaignReviewRepository extends JpaRepository<EmailCampai
             SELECT ecr FROM EmailCampaignReview ecr
             JOIN ecr.emailCampaign ec
             ON ec.emailContent = :emailContent
+            WHERE ecr.isActive = True
             """)
     List<EmailCampaignReview> findByEmailContent(@Param("emailContent") EmailContent emailContent);
 
 
-    List<EmailCampaignReview> findByEmailCampaign(EmailCampaign emailCampaign);
+    List<EmailCampaignReview> findByEmailCampaignAndIsActiveTrue(EmailCampaign emailCampaign);
 
-    List<EmailCampaignReview> findByReviewer(User user);
 
+    List<EmailCampaignReview> findByReviewerAndIsActiveTrue(@Param("user") User user);
 
 }

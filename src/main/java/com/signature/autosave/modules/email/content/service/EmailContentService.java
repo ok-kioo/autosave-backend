@@ -35,7 +35,7 @@ public class EmailContentService {
     private String frontEndUrl;
 
     public EmailContentResponseDTO createEmailContent(CreateEmailContentDTO createEmailContentDTO, UserDetails userDetails){
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailContent emailContent = EmailContentBuilder.builder()
@@ -60,8 +60,8 @@ public class EmailContentService {
 
     @Transactional(readOnly = true)
     public EmailContentResponseDTO listEmailContent(UUID id) {
-        EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Content not found."));
+        EmailContent emailContent = emailContentRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         return new EmailContentResponseDTO(
                 emailContent.getId(),
@@ -75,10 +75,10 @@ public class EmailContentService {
 
     @Transactional(readOnly = true)
     public List<EmailContentResponseDTO> listEmailContents(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return emailContentRepository.findByEditor(user).stream().map(emailContent -> new EmailContentResponseDTO(
+        return emailContentRepository.findByEmailContentEditorAndIsActiveTrue(user).stream().map(emailContent -> new EmailContentResponseDTO(
                 emailContent.getId(),
                 emailContent.getTopic(),
                 emailContent.getSubject(),
@@ -89,11 +89,11 @@ public class EmailContentService {
     }
 
     public EmailContentResponseDTO updateEmailContent(UUID id, UpdateEmailContentDTO updateEmailContentDTO, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Content not found."));
+        EmailContent emailContent = emailContentRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         if(emailContent.getEditor() != user){
             throw new IllegalArgumentException("You do not have permission to update this email content.");
@@ -133,17 +133,17 @@ public class EmailContentService {
     }
 
     public void deleteEmailContent(UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Content not found."));
+        EmailContent emailContent = emailContentRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         if(emailContent.getEditor() != user){
             throw new IllegalArgumentException("You do not have permission to delete this email content.");
         }
 
-        emailContentRepository.delete(emailContent);
+        emailContentRepository.setEmailContentAsNonActive(emailContent);
     }
 
     private void emailContentUpdatedNotify(EmailContent emailContent, UUID emailCampaignReviewId, String emailCampaignReviewerEmail){

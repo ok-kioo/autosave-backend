@@ -30,7 +30,7 @@ public class CampaignNodeService {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void registerCampaign(EmailCampaignCreatedEvent event) {
-        emailCampaignRepository.findById(event.emailCampaign())
+        emailCampaignRepository.findByIdAndIsActiveTrue(event.emailCampaign())
                 .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         CampaignNode campaignNode = new CampaignNode(event.emailCampaign());
@@ -47,7 +47,7 @@ public class CampaignNodeService {
     }
 
     public void registerView(RegisterCampaignNodeViewDTO registerCampaignNodeViewDTO, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         if(user.getId() != registerCampaignNodeViewDTO.userId()) {
@@ -71,7 +71,7 @@ public class CampaignNodeService {
     }
 
     public Boolean toggleLike(ToggleLikeCampaignNodeDTO toggleLikeCampaignNodeDTO, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         if(user.getId() != toggleLikeCampaignNodeDTO.userId()) {
@@ -95,7 +95,7 @@ public class CampaignNodeService {
     }
 
     public CommentThreadProjection registerCampaignComment(RegisterCampaignCommentDTO registerCampaignCommentDTO, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         if(user.getId() != registerCampaignCommentDTO.userId()) {
@@ -115,7 +115,7 @@ public class CampaignNodeService {
     }
 
     public CommentThreadProjection registerReplyComment(RegisterReplyCommentDTO registerReplyCommentDTO, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
         if(user.getId() != registerReplyCommentDTO.userId()) {
@@ -142,7 +142,7 @@ public class CampaignNodeService {
     }
 
     public void deleteComment(UUID commentId, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
 

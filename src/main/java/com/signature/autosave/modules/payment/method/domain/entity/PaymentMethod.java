@@ -27,20 +27,27 @@ public class PaymentMethod {
     private PaymentMethodType type;
 
     @NotBlank
+    @Column(name = "first_name")
     private String firstName;
 
     @NotBlank
+    @Column(name = "last_name")
     private String lastName;
 
     @NotBlank
+    @Column(name = "document_number")
     private String documentNumber;
 
     @NotNull
-    private LocalDateTime createdAt;
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     @NotNull
     @Column(name="is_active")
     private boolean isActive = true;
+
+    @Column(name = "disabled_at")
+    private boolean disabledAt;
 
     @NotNull
     @Column(name = "is_default")

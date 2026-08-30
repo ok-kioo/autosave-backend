@@ -10,6 +10,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -43,6 +44,17 @@ public class User implements UserDetails {
     @JoinColumn(name = "plan_contract_id", referencedColumnName = "id")
     private PlanContract planContract;
 
+    @NotNull
+    @Column(name = "is_active")
+    private boolean isActive = true;
+
+    @NotNull
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "disabled_at")
+    private boolean disabledAt;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         if (this.role == null) {
@@ -64,23 +76,4 @@ public class User implements UserDetails {
         return this.password;
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
-    }
 }

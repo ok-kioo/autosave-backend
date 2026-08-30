@@ -19,7 +19,7 @@ public class UserNodeService {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void registerUserNode(UserCreatedEvent event){
-        User user = userRepository.findById(event.user())
+        User user = userRepository.findByIdAndIsActiveTrue(event.user())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         UserNode userNode = new UserNode(user.getId(), user.getName());

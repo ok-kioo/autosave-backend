@@ -44,10 +44,10 @@ public class EmailCampaignService {
 
     @Transactional
     public EmailCampaignResponseDTO createEmailCampaign(CreateEmailCampaignDTO createEmailCampaignDTO, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        EmailContent emailContent = emailContentRepository.findById(createEmailCampaignDTO.emailContent())
+        EmailContent emailContent = emailContentRepository.findByIdAndIsActiveTrue(createEmailCampaignDTO.emailContent())
                 .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         if(emailContent.getEditor() != user){
@@ -79,7 +79,7 @@ public class EmailCampaignService {
 
     @Transactional(readOnly = true)
     public EmailCampaignResponseDTO listEmailCampaign(UUID id) {
-        EmailCampaign emailCampaign = emailCampaignRepository.findById(id)
+        EmailCampaign emailCampaign = emailCampaignRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         return new EmailCampaignResponseDTO(
@@ -93,10 +93,10 @@ public class EmailCampaignService {
 
     @Transactional(readOnly = true)
     public List<EmailCampaignResponseDTO> listEmailCampaigns(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return emailCampaignRepository.findByEmailContentEditor(user).stream().map(emailCampaign -> new EmailCampaignResponseDTO(
+        return emailCampaignRepository.findByEmailContentEditorAndIsActiveTrue(user).stream().map(emailCampaign -> new EmailCampaignResponseDTO(
                 emailCampaign.getId(),
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
@@ -107,7 +107,7 @@ public class EmailCampaignService {
 
     @Transactional(readOnly = true)
     public List<EmailCampaignResponseDTO> listEmailCampaignsAvailable(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         PlanContract userPlanContract = user.getPlanContract();
@@ -132,17 +132,17 @@ public class EmailCampaignService {
 
     @Transactional
     public void deleteEmailCampaign(UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        EmailCampaign emailCampaign = emailCampaignRepository.findById(id)
+        EmailCampaign emailCampaign = emailCampaignRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         if(emailCampaign.getEmailContent().getEditor() != user){
             throw new IllegalArgumentException("You do not have permission to delete this campaign.");
         }
 
-        emailCampaignRepository.delete(emailCampaign);
+        emailCampaignRepository.setEmailCampaignAsNonActive(emailCampaign);
 
         publisher.publishEvent(new EmailCampaignDeletedEvent(emailCampaign.getId()));
     }
