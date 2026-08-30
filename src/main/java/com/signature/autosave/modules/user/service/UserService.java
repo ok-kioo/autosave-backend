@@ -26,7 +26,7 @@ public class UserService {
     @Transactional
     public UserResponseDTO createUser(RegisterDTO registerDTO){
         userRepository.findByEmail(registerDTO.email()).ifPresent(user -> {
-            throw new IllegalArgumentException("Email já cadastrado");
+            throw new IllegalArgumentException("Email already registered.");
         });
 
         String encodedPassword = passwordEncoder.encode(registerDTO.password());
@@ -47,14 +47,14 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserResponseDTO list(UUID id){
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
     public UserResponseDTO updateUser(UpdateUserDTO updateUserDTO, UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         Optional.ofNullable(updateUserDTO.email())
                 .ifPresent(user::setEmail);
@@ -72,7 +72,7 @@ public class UserService {
 
     public UserResponseDTO updateRoleUser(UpdateRoleUserDTO updateRoleUserDTO, UUID id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         user.setRole(updateRoleUserDTO.role());
         userRepository.save(user);
@@ -83,14 +83,14 @@ public class UserService {
     @Transactional
     public void deleteUser(DeleteUserDTO deleteUserDTO, UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         if (!user.getId().equals(id)) {
-            throw new IllegalArgumentException("Id do usuário não corresponde ao usuário autenticado");
+            throw new IllegalArgumentException("User Id does not match the authenticated user.");
         }
 
         if(!user.getPassword().equals(deleteUserDTO.password())){
-            throw new IllegalArgumentException("Senha incorreta");
+            throw new IllegalArgumentException("Wrong password.");
         }
 
         userRepository.delete(user);

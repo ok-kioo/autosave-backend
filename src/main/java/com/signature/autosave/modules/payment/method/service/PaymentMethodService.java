@@ -39,7 +39,7 @@ public class PaymentMethodService {
     @Transactional
     public PaymentMethodResponseDTO createPaymentMethod(RegisterPaymentMethodDTO registerPaymentMethod, UserDetails userDetails) throws MPException, MPApiException {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         if (registerPaymentMethod.isDefault()) {
             paymentMethodRepository.setPaymentMethodAsNonDefault(user.getId());
@@ -54,7 +54,7 @@ public class PaymentMethodService {
     @Transactional(readOnly = true)
     public List<PaymentMethodResponseDTO> listPaymentMethods(UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         return paymentMethodRepository.findAllByUserIdAndIsActiveTrue(user.getId())
                 .stream()
@@ -71,23 +71,23 @@ public class PaymentMethodService {
     @Transactional(readOnly = true)
     public PaymentMethodResponseDTO listPaymentMethod(UUID id, UserDetails userDetails) throws MPException, MPApiException {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findByIdAndIsActiveTrue(id)
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
         return responseDTOBuild(paymentMethod, user);
     }
 
     public PaymentMethodResponseDTO updatePaymentMethod(UUID id, UpdatePaymentMethodDTO updatePaymentMethodDTO, UserDetails userDetails) throws MPException, MPApiException {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
         if (!paymentMethod.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Você não tem permissão para atualizar este método de pagamento");
+            throw new RuntimeException("You do not have permission to update this payment method.");
         }
 
         if (updatePaymentMethodDTO.isDefault()) {
@@ -102,22 +102,22 @@ public class PaymentMethodService {
 
     public void deletePaymentMethod(UUID id, UserDetails userDetails) throws MPException, MPApiException {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
         if (!paymentMethod.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Você não tem permissão para excluir este método de pagamento");
+            throw new RuntimeException("You do not have permission to delete this payment method.");
         }
 
         if (paymentMethod.isDefault()) {
-            throw new RuntimeException("Você não pode excluir o método de pagamento padrão");
+            throw new RuntimeException("You can not delete your default payment method.");
         }
 
         if(paymentMethod instanceof CreditCardPaymentMethod creditCardPaymentMethod){
             creditMethodRepository.findById(paymentMethod.getId())
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
             paymentMethodRepository.setPaymentMethodAsNonActive(paymentMethod.getId());
 
@@ -126,7 +126,7 @@ public class PaymentMethodService {
 
         if(paymentMethod instanceof PixPaymentMethod) {
             pixMethodRepository.findById(paymentMethod.getId())
-                    .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+                    .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
             paymentMethodRepository.setPaymentMethodAsNonActive(paymentMethod.getId());
         }
@@ -136,7 +136,7 @@ public class PaymentMethodService {
         if(registerPaymentMethodDTO.getGatewayPaymentMethodId() == null
             || registerPaymentMethodDTO.getGatewayToken() == null
             || registerPaymentMethodDTO.getGatewayIssuerId() == null) {
-            throw new RuntimeException("É necessário cadastrar o cartão com os campos token, issuerId e paymentMethodId preenchidos");
+            throw new RuntimeException("It is necessary to register the card with the token, issuerId, and paymentMethodId fields filled in.");
         }
 
         Customer customer = mpComponent.createCustomer(registerPaymentMethodDTO);
@@ -214,7 +214,7 @@ public class PaymentMethodService {
                     user);
         }
 
-        throw new RuntimeException("Método de pagamento não encontrado ou você não tem permissão para acessá-lo");
+        throw new RuntimeException("Payment method not found or you do not have permission.");
     }
 
     private PaymentMethod basePaymentMethodBuild(RegisterPaymentMethodDTO registerPaymentMethodDTO, User user) {

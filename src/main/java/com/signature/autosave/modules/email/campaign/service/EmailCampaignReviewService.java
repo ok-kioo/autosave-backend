@@ -33,15 +33,15 @@ public class EmailCampaignReviewService {
 
     public EmailCampaignReviewResponseDTO createEmailCampaignReview(CreateEmailCampaignReviewDTO createEmailCampaignReviewDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailCampaign emailCampaign = emailCampaignRepository.findById(createEmailCampaignReviewDTO.emailCampaign())
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo de email não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Email campaign not found."));
 
         List<EmailCampaignReview> emailCampaignReviews = emailCampaignReviewRepository.findByEmailCampaign(emailCampaign);
 
         if(emailCampaignReviews.size() >= 2){
-            throw new IllegalArgumentException("Essa campanha já tem os pares de avaliadores definidos");
+            throw new IllegalArgumentException("The pairs of evaluators for this campaign have already been defined.");
         }
 
         EmailCampaignReview emailCampaignReview = EmailCampaignReviewBuilder.builder()
@@ -67,13 +67,13 @@ public class EmailCampaignReviewService {
 
     public EmailCampaignReviewResponseDTO updateEmailCampaignReview(UUID id, UpdateEmailCampaignReviewDTO updateEmailCampaignReviewDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailCampaignReview emailCampaignReview = emailCampaignReviewRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Avaliação de campanha de email não encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException("Review not found."));
 
         if (emailCampaignReview.getReviewer() != user) {
-            throw new IllegalArgumentException("Apenas o revisor pode atualizar a avaliação");
+            throw new IllegalArgumentException("You do not have permission to update this review.");
         }
 
         Optional.ofNullable(updateEmailCampaignReviewDTO.comment()).ifPresent(emailCampaignReview::setComment);
@@ -111,7 +111,7 @@ public class EmailCampaignReviewService {
     @Transactional(readOnly = true)
     public List<EmailCampaignReviewResponseDTO> listEmailCampaignReviews(UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         return emailCampaignReviewRepository.findByReviewer(user).stream().map(emailCampaignReview -> new EmailCampaignReviewResponseDTO(
                 emailCampaignReview.getId(),
@@ -124,13 +124,13 @@ public class EmailCampaignReviewService {
     @Transactional(readOnly = true)
     public List<EmailCampaignReviewResponseDTO> listEmailCampaignReviewsByEmailCampaign(UUID emailCampaignId, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailCampaign emailCampaign = emailCampaignRepository.findById(emailCampaignId)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo de email não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Email campaign not found."));
 
         if(emailCampaign.getEmailContent().getEditor() != user){
-            throw new IllegalArgumentException("Apenas o editor do conteúdo de email pode acessar as avaliações da campanha");
+            throw new IllegalArgumentException("You do not have permission to read this reviews.");
 
         }
 
@@ -144,13 +144,13 @@ public class EmailCampaignReviewService {
 
     public void deleteEmailCampaignReview(UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailCampaignReview emailCampaignReview = emailCampaignReviewRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Revisão não encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException("Review not found."));
 
         if(emailCampaignReview.getReviewer() != user){
-            throw new IllegalArgumentException("Apenas o editor da revisão pode deletá-la");
+            throw new IllegalArgumentException("You do not have permission to delete this review.");
         }
 
         emailCampaignReviewRepository.delete(emailCampaignReview);

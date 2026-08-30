@@ -39,7 +39,6 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private Role role;
 
-    @NotNull
     @ManyToOne
     @JoinColumn(name = "plan_contract_id", referencedColumnName = "id")
     private PlanContract planContract;

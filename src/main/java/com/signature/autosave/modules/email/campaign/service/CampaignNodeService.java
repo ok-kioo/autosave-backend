@@ -31,7 +31,7 @@ public class CampaignNodeService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void registerCampaign(EmailCampaignCreatedEvent event) {
         emailCampaignRepository.findById(event.emailCampaign())
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         CampaignNode campaignNode = new CampaignNode(event.emailCampaign());
 
@@ -41,72 +41,72 @@ public class CampaignNodeService {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void deleteCampaign(EmailCampaignDeletedEvent event) {
         campaignNodeRepository.findById(event.emailCampaign())
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         campaignNodeRepository.deleteById(event.emailCampaign());
     }
 
     public void registerView(RegisterCampaignNodeViewDTO registerCampaignNodeViewDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         if(user.getId() != registerCampaignNodeViewDTO.userId()) {
-            throw new RuntimeException("Usuário autenticado não corresponde ao usuário fornecido");
+            throw new RuntimeException("User Id does not match the authenticated user.");
         }
 
         campaignNodeRepository.findById(registerCampaignNodeViewDTO.emailCampaignId())
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         userNodeRepository.findById(registerCampaignNodeViewDTO.userId())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         campaignNodeRepository.registerView(registerCampaignNodeViewDTO.userId(), registerCampaignNodeViewDTO.emailCampaignId());
     }
 
     public Long countViews(UUID emailCampaignId) {
         campaignNodeRepository.findById(emailCampaignId)
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         return campaignNodeRepository.countViews(emailCampaignId);
     }
 
     public Boolean toggleLike(ToggleLikeCampaignNodeDTO toggleLikeCampaignNodeDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         if(user.getId() != toggleLikeCampaignNodeDTO.userId()) {
-            throw new RuntimeException("Usuário autenticado não corresponde ao usuário fornecido");
+            throw new RuntimeException("User Id does not match the authenticated user.");
         }
 
         campaignNodeRepository.findById(toggleLikeCampaignNodeDTO.emailCampaignId())
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         userNodeRepository.findById(toggleLikeCampaignNodeDTO.userId())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         return campaignNodeRepository.toggleLike(toggleLikeCampaignNodeDTO.userId(), toggleLikeCampaignNodeDTO.emailCampaignId());
     }
 
     public Long countLikes(UUID campaignId) {
         campaignNodeRepository.findById(campaignId)
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         return campaignNodeRepository.countLikes(campaignId);
     }
 
     public CommentThreadProjection registerCampaignComment(RegisterCampaignCommentDTO registerCampaignCommentDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         if(user.getId() != registerCampaignCommentDTO.userId()) {
-            throw new RuntimeException("Usuário autenticado não corresponde ao usuário fornecido");
+            throw new RuntimeException("User Id does not match the authenticated user.");
         }
 
         campaignNodeRepository.findById(registerCampaignCommentDTO.emailCampaignId())
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         userNodeRepository.findById(registerCampaignCommentDTO.userId())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         UUID newCommentId = UUID.randomUUID();
 
@@ -116,17 +116,17 @@ public class CampaignNodeService {
 
     public CommentThreadProjection registerReplyComment(RegisterReplyCommentDTO registerReplyCommentDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         if(user.getId() != registerReplyCommentDTO.userId()) {
-            throw new RuntimeException("Usuário autenticado não corresponde ao usuário fornecido");
+            throw new RuntimeException("User Id does not match the authenticated user.");
         }
 
         commentNodeRepository.findById(registerReplyCommentDTO.parentCommentId())
-                .orElseThrow(() -> new RuntimeException("Comentário pai não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Father comment not found"));
 
         userNodeRepository.findById(registerReplyCommentDTO.userId())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         UUID newCommentId = UUID.randomUUID();
 
@@ -136,21 +136,21 @@ public class CampaignNodeService {
 
     public List<CommentThreadProjection> listComments(UUID campaignId) {
         campaignNodeRepository.findById(campaignId)
-                .orElseThrow(() -> new RuntimeException("Campanha não encontrada"));
+                .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
         return commentNodeRepository.findComments(campaignId);
     }
 
     public void deleteComment(UUID commentId, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
 
         commentNodeRepository.findById(commentId)
-                .orElseThrow(() -> new RuntimeException("Comentário não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
 
         if(commentNodeRepository.commentWrittenByUser(commentId, user.getId())) {
-            throw new RuntimeException("Usuário autenticado não é o autor do comentário");
+            throw new RuntimeException("You do not have permission to delete this comment.");
         }
 
         commentNodeRepository.deleteComment(commentId);

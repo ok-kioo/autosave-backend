@@ -3,6 +3,7 @@ package com.signature.autosave.modules.subscription.domain.repository;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -19,5 +20,5 @@ public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPl
         WHERE sp.isActive = true
           AND sp.price <= :price
 """)
-    List<SubscriptionPlan> findEmailCampaignSubscriptionPlans(BigDecimal price);
+    List<SubscriptionPlan> findEmailCampaignSubscriptionPlans(@Param("price") BigDecimal price);
 }

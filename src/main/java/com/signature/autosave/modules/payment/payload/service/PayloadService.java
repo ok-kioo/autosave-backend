@@ -31,7 +31,7 @@ public class PayloadService {
     @Transactional(readOnly = true)
     public PayloadResponseDTO listPayload(UUID id){
         Payload payload = payloadRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Payload not found with id: " + id));
+            .orElseThrow(() -> new RuntimeException("Payload not found with id: " + id + "."));
 
         return new PayloadResponseDTO(
                 payload.getId(),
@@ -70,7 +70,7 @@ public class PayloadService {
     private void savePayload(Payment payment) {
         String status = payment.getStatus();
         PlanContract planContract = planContractRepository.findById(UUID.fromString(payment.getExternalReference()))
-                .orElseThrow(() -> new RuntimeException("PlanContract not found with id: " + payment.getExternalReference()));
+                .orElseThrow(() -> new RuntimeException("PlanContract not found with id: " + payment.getExternalReference() + "."));
 
         if ("approved".equals(status)) {
             handleApprovedPayment(payment, planContract);

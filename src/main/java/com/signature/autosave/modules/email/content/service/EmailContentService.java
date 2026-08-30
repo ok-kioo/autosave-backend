@@ -36,7 +36,7 @@ public class EmailContentService {
 
     public EmailContentResponseDTO createEmailContent(CreateEmailContentDTO createEmailContentDTO, UserDetails userDetails){
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailContent emailContent = EmailContentBuilder.builder()
                 .withTopic(createEmailContentDTO.topic().name())
@@ -61,7 +61,7 @@ public class EmailContentService {
     @Transactional(readOnly = true)
     public EmailContentResponseDTO listEmailContent(UUID id) {
         EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Content not found."));
 
         return new EmailContentResponseDTO(
                 emailContent.getId(),
@@ -76,7 +76,7 @@ public class EmailContentService {
     @Transactional(readOnly = true)
     public List<EmailContentResponseDTO> listEmailContents(UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         return emailContentRepository.findByEditor(user).stream().map(emailContent -> new EmailContentResponseDTO(
                 emailContent.getId(),
@@ -90,19 +90,19 @@ public class EmailContentService {
 
     public EmailContentResponseDTO updateEmailContent(UUID id, UpdateEmailContentDTO updateEmailContentDTO, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Content not found."));
 
         if(emailContent.getEditor() != user){
-            throw new IllegalArgumentException("Apenas o editor do conteúdo pode editá-lo");
+            throw new IllegalArgumentException("You do not have permission to update this email content.");
         }
 
         List<EmailCampaignReview> emailCampaignReviews = emailCampaignReviewRepository.findByEmailContent(emailContent);
 
         if(!emailCampaignReviews.contains(EmailCampaignStatus.PENDING)){
-            throw new IllegalArgumentException("O conteúdo só pode ser editado se for requisitado por um avaliador");
+            throw new IllegalArgumentException("The content may only be edited if requested by an reviewer.");
         }
 
         Optional.ofNullable(updateEmailContentDTO.topic())
@@ -134,13 +134,13 @@ public class EmailContentService {
 
     public void deleteEmailContent(UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Content not found."));
 
         if(emailContent.getEditor() != user){
-            throw new IllegalArgumentException("Apenas o editor do conteúdo pode deletá-lo");
+            throw new IllegalArgumentException("You do not have permission to delete this email content.");
         }
 
         emailContentRepository.delete(emailContent);
@@ -153,7 +153,8 @@ public class EmailContentService {
                 LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")),
                 "Revisão de campanha de email",
                 "Conteúdo de email atualizado",
-                "O conteúdo do email '" + emailContent.getSubject() + "', referente a campanha revisada por você foi atualizado. Por favor, revise as alterações e aprove ou rejeite a campanha de email associada.",
+                "O conteúdo do email '" + emailContent.getSubject() + "', referente a campanha revisada por você foi atualizado. " +
+                        "Por favor, revise as alterações e aprove ou rejeite a campanha de email associada.",
                 frontEndUrl+"/email/content/review"+emailCampaignReviewId
         );
 

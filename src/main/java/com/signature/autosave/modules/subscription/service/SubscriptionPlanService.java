@@ -35,27 +35,33 @@ public class SubscriptionPlanService {
 
         subscriptionPlanRepository.save(subscriptionPlan);
 
-        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt());
+        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(),
+                subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(),
+                subscriptionPlan.getCreatedAt());
     }
 
     @Transactional(readOnly = true)
     public SubscriptionPlanResponseDTO listSubscription(UUID id){
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
-                .orElseThrow(() -> new IllegalArgumentException("Plano não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Plan not found."));
 
-        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt());
+        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(),
+                subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(),
+                subscriptionPlan.getCreatedAt());
     }
 
     @Transactional(readOnly = true)
     public List<SubscriptionPlanResponseDTO> listSubscriptions(){
         return subscriptionPlanRepository.findByIsActive(true).stream()
-                .map(subscriptionPlan -> new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt()))
+                .map(subscriptionPlan -> new SubscriptionPlanResponseDTO(subscriptionPlan.getId(),
+                        subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(),
+                        subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt()))
                 .toList();
     }
 
     public SubscriptionPlanResponseDTO updateSubscriptionPlan(UpdateSubscriptionPlanDTO updateSubscriptionPlanDTO, UUID id) {
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
-                .orElseThrow(() -> new IllegalArgumentException("Plano não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Plan not found."));
 
         Optional.ofNullable(updateSubscriptionPlanDTO.name()).ifPresent(subscriptionPlan::setName);
         Optional.ofNullable(updateSubscriptionPlanDTO.price()).ifPresent(subscriptionPlan::setPrice);
@@ -65,12 +71,14 @@ public class SubscriptionPlanService {
 
         subscriptionPlanRepository.save(subscriptionPlan);
 
-        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt());
+        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(),
+                subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(),
+                subscriptionPlan.getCreatedAt());
     }
 
     public void deleteSubscriptionPlan(UUID id) {
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
-                .orElseThrow(() -> new IllegalArgumentException("Plano não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Plan not found."));
 
         subscriptionPlan.setIsActive(false);
         subscriptionPlanRepository.save(subscriptionPlan);

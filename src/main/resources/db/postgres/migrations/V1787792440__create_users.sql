@@ -4,7 +4,7 @@ CREATE TABLE users (
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     role VARCHAR(255) NOT NULL,
-    plan_contract_id UUID NOT NULL,
+    plan_contract_id UUID,
 
     CONSTRAINT users_role_check CHECK (role IN ('ADMIN', 'EDITOR', 'REVIEWER', 'VIEWER', 'BILLING_MANAGER'))
 );
