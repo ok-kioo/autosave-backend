@@ -14,6 +14,8 @@ import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,18 +76,19 @@ public class EmailContentService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmailContentResponseDTO> listEmailContents(UserDetails userDetails) {
+    public Page<EmailContentResponseDTO> listEmailContents(UserDetails userDetails, Pageable pageable, String searchTerm) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return emailContentRepository.findByEmailContentEditorAndIsActiveTrue(user).stream().map(emailContent -> new EmailContentResponseDTO(
+        return emailContentRepository.findByEmailContentEditorAndIsActiveTrue(user.getId(), searchTerm, pageable).map(
+                emailContent -> new EmailContentResponseDTO(
                 emailContent.getId(),
                 emailContent.getTopic(),
                 emailContent.getSubject(),
                 emailContent.getBody(),
                 emailContent.getEditor(),
                 emailContent.getCreatedAt()
-        )).toList();
+        ));
     }
 
     public EmailContentResponseDTO updateEmailContent(UUID id, UpdateEmailContentDTO updateEmailContentDTO, UserDetails userDetails) {

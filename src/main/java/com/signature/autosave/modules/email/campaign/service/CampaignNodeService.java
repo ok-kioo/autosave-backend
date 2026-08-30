@@ -11,6 +11,7 @@ import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserNodeRepository;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
@@ -134,11 +135,21 @@ public class CampaignNodeService {
                 registerReplyCommentDTO.parentCommentId(), newCommentId, registerReplyCommentDTO.text());
     }
 
-    public List<CommentThreadProjection> listComments(UUID campaignId) {
+    public List<CommentThreadProjection> listComments(
+            UUID campaignId,
+            Pageable pageable
+    ) {
         campaignNodeRepository.findById(campaignId)
                 .orElseThrow(() -> new RuntimeException("Email campaign not found."));
 
-        return commentNodeRepository.findComments(campaignId);
+        long skip = pageable.getOffset();
+        int limit = pageable.getPageSize();
+
+        return commentNodeRepository.findComments(
+                campaignId,
+                skip,
+                limit
+        );
     }
 
     public void deleteComment(UUID commentId, UserDetails userDetails) {

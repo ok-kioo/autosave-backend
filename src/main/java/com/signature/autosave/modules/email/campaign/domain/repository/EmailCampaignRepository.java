@@ -1,21 +1,56 @@
 package com.signature.autosave.modules.email.campaign.domain.repository;
 
 import com.signature.autosave.modules.email.campaign.domain.entity.EmailCampaign;
-import com.signature.autosave.modules.user.domain.entity.User;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface EmailCampaignRepository extends JpaRepository<EmailCampaign, UUID> {
     Optional<EmailCampaign> findByIdAndIsActiveTrue(UUID id);
 
-    List<EmailCampaign> findByEmailContentEditorAndIsActiveTrue(User user);
+    @Query(
+            value = """
+        SELECT ec.*
+        FROM email_campaign ec
+        JOIN email_content ect
+            ON ect.id = ec.email_content_id
+        WHERE ect.editor_id = :userId
+          AND ec.is_available = true
+          AND ect.is_active = true
+          AND (
+              :searchTerm IS NULL
+              OR to_tsvector('portuguese', ec.text_preview)
+                 @@ plainto_tsquery('portuguese', :searchTerm)
+          )
+        """,
+            countQuery = """
+        SELECT COUNT(ec.id)
+        FROM email_campaign ec
+        JOIN email_content ect
+            ON ect.id = ec.email_content_id
+        WHERE ect.editor_id = :userId
+          AND ec.is_available = true
+          AND ect.is_active = true
+          AND (
+              :searchTerm IS NULL
+              OR to_tsvector('portuguese', ec.text_preview)
+                 @@ plainto_tsquery('portuguese', :searchTerm)
+          )
+        """,
+            nativeQuery = true
+    )
+    Page<EmailCampaign> findByEmailContentEditorAndIsActiveTrue(
+            @Param("userId") UUID userId,
+            @Param("searchTerm") String searchTerm,
+            Pageable pageable
+    );
 
     @Modifying
     @Transactional
@@ -28,13 +63,44 @@ public interface EmailCampaignRepository extends JpaRepository<EmailCampaign, UU
 """)
     void setEmailCampaignAsNonActive(@Param("emailCampaign") EmailCampaign emailCampaign);
 
-    @Query("""
-            SELECT DISTINCT ec
-            FROM EmailCampaign ec
-            JOIN ec.subscriptionPlans
-            sp WHERE sp.id = :subscriptionPlanId
-            AND ec.isAvailable = true
-            AND sp.isActive = true
-            """)
-    List<EmailCampaign> findAccessibleCampaigns(@Param("subscriptionPlanId") UUID subscriptionPlanId);
+    @Query(
+            value = """
+        SELECT DISTINCT ec.*
+        FROM email_campaign ec
+        JOIN email_campaign_subscription_plan ecsp
+            ON ecsp.email_campaign_id = ec.id
+        JOIN subscription_plan sp
+            ON sp.id = ecsp.subscription_plan_id
+        WHERE sp.id = :subscriptionPlanId
+          AND ec.is_available = true
+          AND sp.is_active = true
+          AND (
+              :searchTerm IS NULL
+              OR to_tsvector('portuguese', ec.text_preview)
+                 @@ plainto_tsquery('portuguese', :searchTerm)
+          )
+        """,
+            countQuery = """
+        SELECT COUNT(DISTINCT ec.id)
+        FROM email_campaign ec
+        JOIN email_campaign_subscription_plan ecsp
+            ON ecsp.email_campaign_id = ec.id
+        JOIN subscription_plan sp
+            ON sp.id = ecsp.subscription_plan_id
+        WHERE sp.id = :subscriptionPlanId
+          AND ec.is_available = true
+          AND sp.is_active = true
+          AND (
+              :searchTerm IS NULL
+              OR to_tsvector('portuguese', ec.text_preview)
+                 @@ plainto_tsquery('portuguese', :searchTerm)
+          )
+        """,
+            nativeQuery = true
+    )
+    Page<EmailCampaign> findAccessibleCampaigns(
+            @Param("subscriptionPlanId") UUID subscriptionPlanId,
+            @Param("searchTerm") String searchTerm,
+            Pageable pageable
+    );
 }

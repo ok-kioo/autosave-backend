@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,7 +75,8 @@ public class EmailCampaignService {
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isAvailable()
+                emailCampaign.isAvailable(),
+                emailCampaign.getCreatedAt()
         );
     }
 
@@ -87,26 +90,28 @@ public class EmailCampaignService {
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isAvailable()
+                emailCampaign.isAvailable(),
+                emailCampaign.getCreatedAt()
         );
     }
 
     @Transactional(readOnly = true)
-    public List<EmailCampaignResponseDTO> listEmailCampaigns(UserDetails userDetails) {
+    public Page<EmailCampaignResponseDTO> listEmailCampaigns(UserDetails userDetails, Pageable pageable, String searchTerm) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return emailCampaignRepository.findByEmailContentEditorAndIsActiveTrue(user).stream().map(emailCampaign -> new EmailCampaignResponseDTO(
+        return emailCampaignRepository.findByEmailContentEditorAndIsActiveTrue(user.getId(), searchTerm, pageable).map(emailCampaign -> new EmailCampaignResponseDTO(
                 emailCampaign.getId(),
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isAvailable()
-        )).toList();
+                emailCampaign.isAvailable(),
+                emailCampaign.getCreatedAt()
+        ));
     }
 
     @Transactional(readOnly = true)
-    public List<EmailCampaignResponseDTO> listEmailCampaignsAvailable(UserDetails userDetails) {
+    public Page<EmailCampaignResponseDTO> listEmailCampaignsAvailable(UserDetails userDetails, Pageable pageable, String searchTerm) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
@@ -120,14 +125,15 @@ public class EmailCampaignService {
                 .getSubscriptionPlan()
                 .getId();
 
-        return emailCampaignRepository.findAccessibleCampaigns(planId).stream().map(
+        return emailCampaignRepository.findAccessibleCampaigns(planId, searchTerm, pageable).map(
                 emailCampaign -> new EmailCampaignResponseDTO(
                 emailCampaign.getId(),
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isAvailable()
-        )).toList();
+                emailCampaign.isAvailable(),
+                emailCampaign.getCreatedAt()
+        ));
     }
 
     @Transactional

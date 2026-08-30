@@ -14,10 +14,11 @@ import com.signature.autosave.modules.payment.payload.service.event.PayloadCreat
 import com.signature.autosave.modules.payment.payload.service.event.PayloadRefundEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -42,16 +43,16 @@ public class PayloadService {
     }
 
     @Transactional(readOnly = true)
-    public List<PayloadResponseDTO> listPayloads(){
-        return payloadRepository.findAll().stream()
+    public Page<PayloadResponseDTO> listPayloads(Pageable pageable) {
+        return payloadRepository.findAll(pageable)
                 .map(payload -> new PayloadResponseDTO(
                         payload.getId(),
                         payload.getAmount(),
                         payload.getPaymentId(),
                         payload.getType(),
                         payload.getPlanContract()
-                ))
-                .toList();    }
+                ));
+    }
 
     public void processPayload(Map<String, Object> payload) throws MPException, MPApiException {
         String type = (String) payload.get("type");

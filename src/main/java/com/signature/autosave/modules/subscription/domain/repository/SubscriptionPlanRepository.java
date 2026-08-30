@@ -1,6 +1,8 @@
 package com.signature.autosave.modules.subscription.domain.repository;
 
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,7 +16,7 @@ import java.util.UUID;
 
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, UUID> {
     Optional<SubscriptionPlan> findByIdAndIsActive(UUID uuid, boolean isActive);
-    Optional<SubscriptionPlan> findByIsActive(boolean isActive);
+    Page<SubscriptionPlan> findByIsActiveTrue(Pageable pageable);
 
     @Modifying
     @Transactional

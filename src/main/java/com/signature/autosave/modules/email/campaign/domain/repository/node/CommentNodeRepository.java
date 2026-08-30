@@ -40,22 +40,30 @@ public interface CommentNodeRepository extends Neo4jRepository<CommentNode, UUID
     CommentThreadProjection replyComment(UUID userId, UUID parentCommentId, UUID commentId, String text);
 
     @Query("""
-    MATCH (c:Campaign {id: $campaignId})
-    MATCH (c)<-[:ON]-(root:Comment)
-    MATCH (authorRoot:User)-[:WROTE]->(root)
-    
-    OPTIONAL MATCH (reply:Comment)-[:REPLYING]->(root)
-    OPTIONAL MATCH (authorReply:User)-[:WROTE]->(reply)
-    
-    WITH root, authorRoot,
+    MATCH (c:Campaign {id: $campaignId})<-[:COMMENTED]-(root:Comment)
+    MATCH (rootAuthor:User)-[:COMMENTED]->(root)
+
+    OPTIONAL MATCH (root)<-[:REPLY_TO]-(reply:Comment)
+    OPTIONAL MATCH (replyAuthor:User)-[:COMMENTED]->(reply)
+
+    WITH root, rootAuthor,
          collect({
              comment: reply,
-             author: authorReply
+             author: replyAuthor
          }) AS replies
-    
-    RETURN root, authorRoot, replies
-    """)
-    List<CommentThreadProjection> findComments(UUID campaignId);
+
+    RETURN root,
+           rootAuthor,
+           replies
+    ORDER BY root.dateTime DESC
+    SKIP $skip
+    LIMIT $limit
+""")
+    List<CommentThreadProjection> findComments(
+            UUID campaignId,
+            long skip,
+            long limit
+    );
 
     @Query("""
     MATCH (u:User {id: $userId})-[:WROTE]->(c:Comment {id: $commentId})

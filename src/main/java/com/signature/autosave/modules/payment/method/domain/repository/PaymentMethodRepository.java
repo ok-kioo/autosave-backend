@@ -1,13 +1,14 @@
 package com.signature.autosave.modules.payment.method.domain.repository;
 
 import com.signature.autosave.modules.payment.method.domain.entity.PaymentMethod;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,7 +25,15 @@ public interface PaymentMethodRepository extends JpaRepository<PaymentMethod, UU
 
     Optional<PaymentMethod> findByIdAndIsActiveTrue(UUID id);
 
-    @Query("SELECT p FROM PaymentMethod p WHERE p.user.id = :userId AND p.isActive = true")
-    List<PaymentMethod> findAllByUserIdAndIsActiveTrue(@Param("userId") UUID userId);
+    @Query("""
+    SELECT p
+    FROM PaymentMethod p
+    WHERE p.user.id = :userId
+      AND p.isActive = true
+""")
+    Page<PaymentMethod> findAllByUserIdAndIsActiveTrue(
+            @Param("userId") UUID userId,
+            Pageable pageable
+    );
 
 }

@@ -6,12 +6,14 @@ import com.signature.autosave.modules.email.content.dto.EmailContentResponseDTO;
 import com.signature.autosave.modules.email.content.dto.UpdateEmailContentDTO;
 import com.signature.autosave.modules.email.content.service.EmailContentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,9 +46,11 @@ public class EmailContentController {
     }
 
     @GetMapping
-    public ResponseEntity<?> listEmailContents(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> listEmailContents(@AuthenticationPrincipal UserDetails userDetails,
+                                               @PageableDefault(size = 10, sort = "name") Pageable pageable,
+                                               @RequestParam(required = false) String searchTerm) {
         try {
-            List<EmailContentResponseDTO> result = emailContentService.listEmailContents(userDetails);
+            Page<EmailContentResponseDTO> result = emailContentService.listEmailContents(userDetails, pageable, searchTerm);
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 
         } catch (Exception e) {

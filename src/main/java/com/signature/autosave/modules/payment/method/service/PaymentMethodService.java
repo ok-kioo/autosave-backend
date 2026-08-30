@@ -19,12 +19,13 @@ import com.signature.autosave.modules.payment.method.dto.*;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -52,20 +53,18 @@ public class PaymentMethodService {
     }
 
     @Transactional(readOnly = true)
-    public List<PaymentMethodResponseDTO> listPaymentMethods(UserDetails userDetails) {
+    public Page<PaymentMethodResponseDTO> listPaymentMethods(UserDetails userDetails, Pageable pageable) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
-        return paymentMethodRepository.findAllByUserIdAndIsActiveTrue(user.getId())
-                .stream()
+        return paymentMethodRepository.findAllByUserIdAndIsActiveTrue(user.getId(), pageable)
                 .map(method -> {
                     try {
                         return responseDTOBuild(method, user);
                     } catch (MPException | MPApiException e) {
                         throw new RuntimeException(e);
                     }
-                })
-                .toList();
+                });
     }
 
     @Transactional(readOnly = true)

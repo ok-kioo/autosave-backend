@@ -26,13 +26,14 @@ import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -153,14 +154,12 @@ public class PlanContractService {
     }
 
     @Transactional(readOnly = true)
-    public List<PlanContractResponseDTO> listPlanContracts(UserDetails userDetails) {
+    public Page<PlanContractResponseDTO> listPlanContracts(UserDetails userDetails, Pageable pageable) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
 
-        return planContractRepository.findAllByUserId(user.getId())
-                .stream()
-                .map(this::planContractResponseBuild)
-                .toList();
+        return planContractRepository.findAllByUserId(user.getId(), pageable)
+                .map(this::planContractResponseBuild);
     }
 
     private PlanContractResponseDTO createAnnuallyPayment(PaymentMethod paymentMethod, SubscriptionPlan subscriptionPlan,
