@@ -14,7 +14,7 @@ import java.util.Map;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/webhooks/mercadopago")
-public class WebhookControler {
+public class WebhookController {
     private final PayloadService payloadService;
 
     @PostMapping

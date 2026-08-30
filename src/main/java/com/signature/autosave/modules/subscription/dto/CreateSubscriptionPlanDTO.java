@@ -6,25 +6,23 @@ import jakarta.persistence.Enumerated;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
 
 import java.math.BigDecimal;
 
-@Getter
-public class CreateSubscriptionPlanDTO {
-    @NotNull
-    private String name;
+public record CreateSubscriptionPlanDTO(@NotNull
+                                        String name,
 
-    @NotNull
-    private BigDecimal price;
+                                        @NotNull
+                                        BigDecimal price,
 
-    @Enumerated(EnumType.STRING)
-    private BillingCycle billingCycle;
+                                        @Enumerated(EnumType.STRING)
+                                        BillingCycle billingCycle,
 
-    private String description;
+                                        String description,
 
-    @NotNull
-    @Min(0)
-    @Max(365)
-    private Integer trialDays;
+                                        @NotNull
+                                        @Min(0)
+                                        @Max(365)
+                                        Integer trialDays) {
+
 }

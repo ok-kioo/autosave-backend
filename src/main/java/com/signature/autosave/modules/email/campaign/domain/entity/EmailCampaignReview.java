@@ -3,10 +3,12 @@ package com.signature.autosave.modules.email.campaign.domain.entity;
 import com.signature.autosave.modules.email.campaign.domain.enums.EmailCampaignStatus;
 import com.signature.autosave.modules.user.domain.entity.User;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -23,7 +25,7 @@ public class EmailCampaignReview {
     @Enumerated(EnumType.STRING)
     private EmailCampaignStatus status;
 
-    @NotNull
+    @NotBlank
     private String comment;
 
     @JoinColumn(name = "email_campaign_id", referencedColumnName = "id")
@@ -33,5 +35,16 @@ public class EmailCampaignReview {
     @ManyToOne
     @JoinColumn(name = "reviewer_id", referencedColumnName = "id")
     private User reviewer;
+
+    @NotNull
+    @Column(name = "is_active")
+    private boolean isActive = true;
+
+    @NotNull
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "disabled_at")
+    private LocalDateTime disabledAt;
 
 }

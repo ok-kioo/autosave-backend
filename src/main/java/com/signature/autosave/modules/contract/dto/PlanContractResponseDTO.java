@@ -9,39 +9,28 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 import java.util.UUID;
 
-public class PlanContractResponseDTO {
-    @NotBlank
-    private final UUID id;
+public record PlanContractResponseDTO (@NotBlank
+                                       UUID id,
 
-    @NotNull
-    private SubscriptionPlan subscriptionPlan;
+                                       @NotNull
+                                       SubscriptionPlan subscriptionPlan,
 
-    @NotBlank
-    private final PaymentMethod paymentMethod;
+                                       @NotBlank
+                                       PaymentMethod paymentMethod,
 
-    @NotNull
-    private String contractId;
+                                       @NotNull
+                                       String contractId,
 
-    @NotNull
-    private BillingStatus status;
+                                       @NotNull
+                                       BillingStatus status,
 
-    @NotNull
-    private Boolean isRecurring;
+                                       @NotNull
+                                       Boolean isRecurring,
 
-    @NotNull
-    private LocalDate startedAt;
+                                       @NotNull
+                                       LocalDate startedAt,
 
-    @NotNull
-    private LocalDate endsAt;
+                                       @NotNull
+                                       LocalDate endsAt) {
 
-    public PlanContractResponseDTO(UUID id, SubscriptionPlan subscriptionPlan, PaymentMethod paymentMethod, String contractId, BillingStatus status, Boolean isRecurring, LocalDate startedAt, LocalDate endsAt) {
-        this.id = id;
-        this.subscriptionPlan = subscriptionPlan;
-        this.paymentMethod = paymentMethod;
-        this.contractId = contractId;
-        this.status = status;
-        this.isRecurring = isRecurring;
-        this.startedAt = startedAt;
-        this.endsAt = endsAt;
-    }
 }

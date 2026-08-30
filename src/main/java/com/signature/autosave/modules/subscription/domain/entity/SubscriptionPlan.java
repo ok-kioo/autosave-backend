@@ -26,11 +26,11 @@ public class SubscriptionPlan {
     @Column(unique = true)
     private String name;
 
-    @Column(nullable = false)
+    @Column(precision = 19, scale = 2, nullable = false)
     private BigDecimal price;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name="billing_cycle", nullable = false)
     private BillingCycle billingCycle;
 
     private String description;
@@ -38,6 +38,7 @@ public class SubscriptionPlan {
     @NotNull
     @Min(0)
     @Max(365)
+    @Column(name = "trial_days")
     private Integer trialDays;
 
     @NotNull
@@ -45,11 +46,14 @@ public class SubscriptionPlan {
     private String preapprovalPlanId;
 
     @NotNull
-    @Column(nullable = false, updatable = false)
+    @Column(name="created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
     @NotNull
     @Column(name ="is_active", nullable = false)
     private Boolean isActive = true;
+
+    @Column(name = "disabled_at")
+    private LocalDateTime disabledAt;
 
 }

@@ -29,9 +29,16 @@ public class EmailContent {
     private String body;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "editor_id", referencedColumnName = "id")
     private User editor;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    @NotNull
+    @Column(name = "is_active")
+    private boolean isActive = true;
+
+    @Column(name = "disabled_at")
+    private LocalDateTime disabledAt;
 }

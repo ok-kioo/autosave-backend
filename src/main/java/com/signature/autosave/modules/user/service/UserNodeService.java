@@ -1,7 +1,7 @@
 package com.signature.autosave.modules.user.service;
 
 import com.signature.autosave.modules.user.domain.entity.User;
-import com.signature.autosave.modules.user.domain.entity.UserNode;
+import com.signature.autosave.modules.user.domain.entity.node.UserNode;
 import com.signature.autosave.modules.user.domain.repository.UserNodeRepository;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import com.signature.autosave.modules.user.service.events.UserCreatedEvent;
@@ -19,18 +19,18 @@ public class UserNodeService {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void registerUserNode(UserCreatedEvent event){
-        User user = userRepository.findById(event.user())
+        User user = userRepository.findByIdAndIsActiveTrue(event.user())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        UserNode userNode = new UserNode(user.getId(), user.getName());
+        UserNode userNode = new UserNode(user.getId(), user.getName(), null, true);
         userNodeRepository.save(userNode);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void deleteUserNode(UserDeletedEvent event){
-        userNodeRepository.findById(event.user())
+    public void deleteUserNode(UserDeletedEvent event) {
+        userNodeRepository.findActiveById(event.userId())
                 .orElseThrow(() -> new RuntimeException("User node not found"));
 
-        userNodeRepository.deleteById(event.user());
+        userNodeRepository.softDelete(event.userId());
     }
 }

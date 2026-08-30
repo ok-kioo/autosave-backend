@@ -29,7 +29,8 @@ public class AuthConfig {
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui.html"
+                                "/swagger-ui.html",
+                                "/actuator/**"
                         ).permitAll()
                         .requestMatchers("/email/content/create", "/email/content/delete/", "/email/content", "/email/content/").hasAnyRole("EDITOR", "ADMIN", "REVIEWER")
                         .requestMatchers("/email/campaign/create", "/email/campaign/delete/", "/email/campaign", "/email/campaign/").hasAnyRole("EDITOR", "ADMIN", "REVIEWER")

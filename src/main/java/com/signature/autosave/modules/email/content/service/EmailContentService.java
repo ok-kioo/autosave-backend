@@ -10,13 +10,20 @@ import com.signature.autosave.modules.email.content.domain.repository.EmailConte
 import com.signature.autosave.modules.email.content.dto.CreateEmailContentDTO;
 import com.signature.autosave.modules.email.content.dto.EmailContentResponseDTO;
 import com.signature.autosave.modules.email.content.dto.UpdateEmailContentDTO;
+import com.signature.autosave.modules.email.content.service.events.EmailContentDeletedEvent;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
+import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,18 +37,20 @@ public class EmailContentService {
     private final EmailCampaignReviewRepository emailCampaignReviewRepository;
     private final UserRepository userRepository;
     private final IEmailComponent emailComponent;
+    private final ApplicationEventPublisher publisher;
+
 
     @Value("${app.frontend.url}")
     private String frontEndUrl;
 
     public EmailContentResponseDTO createEmailContent(CreateEmailContentDTO createEmailContentDTO, UserDetails userDetails){
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         EmailContent emailContent = EmailContentBuilder.builder()
-                .withTopic(createEmailContentDTO.getTopic().name())
-                .withSubject(createEmailContentDTO.getTitle())
-                .withBody(createEmailContentDTO.getBody())
+                .withTopic(createEmailContentDTO.topic().name())
+                .withSubject(createEmailContentDTO.title())
+                .withBody(createEmailContentDTO.body())
                 .withEditor(user)
                 .withCreatedAt(LocalDateTime.now())
                 .build();
@@ -60,8 +69,8 @@ public class EmailContentService {
 
     @Transactional(readOnly = true)
     public EmailContentResponseDTO listEmailContent(UUID id) {
-        EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+        EmailContent emailContent = emailContentRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         return new EmailContentResponseDTO(
                 emailContent.getId(),
@@ -74,42 +83,43 @@ public class EmailContentService {
     }
 
     @Transactional(readOnly = true)
-    public List<EmailContentResponseDTO> listEmailContents(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+    public Page<EmailContentResponseDTO> listEmailContents(UserDetails userDetails, Pageable pageable, String searchTerm) {
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return emailContentRepository.findByEditor(user).stream().map(emailContent -> new EmailContentResponseDTO(
+        return emailContentRepository.findByEmailContentEditorAndIsActiveTrue(user.getId(), searchTerm, pageable).map(
+                emailContent -> new EmailContentResponseDTO(
                 emailContent.getId(),
                 emailContent.getTopic(),
                 emailContent.getSubject(),
                 emailContent.getBody(),
                 emailContent.getEditor(),
                 emailContent.getCreatedAt()
-        )).toList();
+        ));
     }
 
     public EmailContentResponseDTO updateEmailContent(UUID id, UpdateEmailContentDTO updateEmailContentDTO, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+        EmailContent emailContent = emailContentRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         if(emailContent.getEditor() != user){
-            throw new IllegalArgumentException("Apenas o editor do conteúdo pode editá-lo");
+            throw new IllegalArgumentException("You do not have permission to update this email content.");
         }
 
         List<EmailCampaignReview> emailCampaignReviews = emailCampaignReviewRepository.findByEmailContent(emailContent);
 
         if(!emailCampaignReviews.contains(EmailCampaignStatus.PENDING)){
-            throw new IllegalArgumentException("O conteúdo só pode ser editado se for requisitado por um avaliador");
+            throw new IllegalArgumentException("The content may only be edited if requested by an reviewer.");
         }
 
-        Optional.ofNullable(updateEmailContentDTO.getTopic())
+        Optional.ofNullable(updateEmailContentDTO.topic())
                 .ifPresent(topic -> emailContent.setTopic(topic.name()));
-        Optional.ofNullable(updateEmailContentDTO.getTitle())
+        Optional.ofNullable(updateEmailContentDTO.title())
                 .ifPresent(emailContent::setSubject);
-        Optional.ofNullable(updateEmailContentDTO.getBody())
+        Optional.ofNullable(updateEmailContentDTO.body())
                 .ifPresent(emailContent::setBody);
 
         emailContentRepository.save(emailContent);
@@ -133,17 +143,19 @@ public class EmailContentService {
     }
 
     public void deleteEmailContent(UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        EmailContent emailContent = emailContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+        EmailContent emailContent = emailContentRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         if(emailContent.getEditor() != user){
-            throw new IllegalArgumentException("Apenas o editor do conteúdo pode deletá-lo");
+            throw new IllegalArgumentException("You do not have permission to delete this email content.");
         }
 
-        emailContentRepository.delete(emailContent);
+        emailContentRepository.setEmailContentAsNonActive(emailContent);
+        publisher.publishEvent(new EmailContentDeletedEvent(emailContent.getId()));
+
     }
 
     private void emailContentUpdatedNotify(EmailContent emailContent, UUID emailCampaignReviewId, String emailCampaignReviewerEmail){
@@ -153,7 +165,8 @@ public class EmailContentService {
                 LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")),
                 "Revisão de campanha de email",
                 "Conteúdo de email atualizado",
-                "O conteúdo do email '" + emailContent.getSubject() + "', referente a campanha revisada por você foi atualizado. Por favor, revise as alterações e aprove ou rejeite a campanha de email associada.",
+                "O conteúdo do email '" + emailContent.getSubject() + "', referente a campanha revisada por você foi atualizado. " +
+                        "Por favor, revise as alterações e aprove ou rejeite a campanha de email associada.",
                 frontEndUrl+"/email/content/review"+emailCampaignReviewId
         );
 
@@ -164,5 +177,19 @@ public class EmailContentService {
         } catch (jakarta.mail.MessagingException e) {
             throw new RuntimeException("Erro ao enviar email de notificação", e);
         }
-}
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void cascadeDeleteEmailContents(UserDeletedEvent event) {
+
+        User user = userRepository.findById(event.userId())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        emailContentRepository
+                .findAllByUserIdAndIsActiveTrue(user.getId())
+                .forEach(emailContent -> {
+                    emailContentRepository.setEmailContentAsNonActive(emailContent);
+                    publisher.publishEvent(new EmailContentDeletedEvent(emailContent.getId()));
+                });
+    }
 }

@@ -1,20 +1,14 @@
 package com.signature.autosave.modules.email.campaign.dto.node;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
 
 import java.util.UUID;
 
-@Getter
+public record RegisterCampaignCommentDTO(@NotNull UUID userId,
 
-public class RegisterCampaignCommentDTO {
-    @NotNull
-    private UUID userId;
+                                         @NotNull UUID emailCampaignId,
 
-    @NotNull
-    private UUID emailCampaignId;
+                                         @NotNull String text) {
 
-    @NotNull
-    private String text;
 
 }

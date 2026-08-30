@@ -1,19 +1,17 @@
 package com.signature.autosave.modules.user.dto;
-import jakarta.validation.constraints.NotBlank;
+
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
 
-@Getter
-public class RegisterDTO {
-    @NotBlank
-    private String name;
+public record RegisterDTO(@NotBlank
+                          String name,
 
-    @NotBlank
-    @Email
-    private String email;
+                          @NotBlank
+                          @Email
+                          String email,
 
-    @NotBlank
-    @Size(min = 8)
-    private String password;
+                          @NotBlank
+                          @Size(min = 8)
+                          String password) {
 }

@@ -8,10 +8,11 @@ import com.signature.autosave.modules.subscription.dto.CreateSubscriptionPlanDTO
 import com.signature.autosave.modules.subscription.dto.SubscriptionPlanResponseDTO;
 import com.signature.autosave.modules.subscription.dto.UpdateSubscriptionPlanDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,11 +24,11 @@ public class SubscriptionPlanService {
 
     public SubscriptionPlanResponseDTO createSubscriptionPlan(CreateSubscriptionPlanDTO createDTO){
         SubscriptionPlan subscriptionPlan = SubscriptionPlanBuilder.builder()
-                    .withName(createDTO.getName())
-                    .withPrice(createDTO.getPrice())
-                    .withBillingCycle(createDTO.getBillingCycle())
-                    .withDescription(createDTO.getDescription())
-                    .withTrialDays(createDTO.getTrialDays())
+                    .withName(createDTO.name())
+                    .withPrice(createDTO.price())
+                    .withBillingCycle(createDTO.billingCycle())
+                    .withDescription(createDTO.description())
+                    .withTrialDays(createDTO.trialDays())
                     .build();
 
         String preapprovalPlanId = mpComponent.createPreapprovalPlan(subscriptionPlan);
@@ -35,44 +36,56 @@ public class SubscriptionPlanService {
 
         subscriptionPlanRepository.save(subscriptionPlan);
 
-        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt());
+        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(),
+                subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(),
+                subscriptionPlan.getCreatedAt());
     }
 
     @Transactional(readOnly = true)
     public SubscriptionPlanResponseDTO listSubscription(UUID id){
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
-                .orElseThrow(() -> new IllegalArgumentException("Plano não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Plan not found."));
 
-        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt());
+        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(),
+                subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(),
+                subscriptionPlan.getCreatedAt());
     }
 
     @Transactional(readOnly = true)
-    public List<SubscriptionPlanResponseDTO> listSubscriptions(){
-        return subscriptionPlanRepository.findByIsActive(true).stream()
-                .map(subscriptionPlan -> new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt()))
-                .toList();
+    public Page<SubscriptionPlanResponseDTO> listSubscriptions(Pageable pageable) {
+        return subscriptionPlanRepository
+                .findByIsActiveTrue(pageable)
+                .map(subscriptionPlan -> new SubscriptionPlanResponseDTO(
+                        subscriptionPlan.getId(),
+                        subscriptionPlan.getName(),
+                        subscriptionPlan.getPrice(),
+                        subscriptionPlan.getBillingCycle(),
+                        subscriptionPlan.getTrialDays(),
+                        subscriptionPlan.getCreatedAt()
+                ));
     }
 
     public SubscriptionPlanResponseDTO updateSubscriptionPlan(UpdateSubscriptionPlanDTO updateSubscriptionPlanDTO, UUID id) {
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
-                .orElseThrow(() -> new IllegalArgumentException("Plano não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Plan not found."));
 
-        Optional.ofNullable(updateSubscriptionPlanDTO.getName()).ifPresent(subscriptionPlan::setName);
-        Optional.ofNullable(updateSubscriptionPlanDTO.getPrice()).ifPresent(subscriptionPlan::setPrice);
-        Optional.ofNullable(updateSubscriptionPlanDTO.getBillingCycle()).ifPresent(subscriptionPlan::setBillingCycle);
-        Optional.ofNullable(updateSubscriptionPlanDTO.getDescription()).ifPresent(subscriptionPlan::setDescription);
-        Optional.ofNullable(updateSubscriptionPlanDTO.getTrialDays()).ifPresent(subscriptionPlan::setTrialDays);
+        Optional.ofNullable(updateSubscriptionPlanDTO.name()).ifPresent(subscriptionPlan::setName);
+        Optional.ofNullable(updateSubscriptionPlanDTO.price()).ifPresent(subscriptionPlan::setPrice);
+        Optional.ofNullable(updateSubscriptionPlanDTO.billingCycle()).ifPresent(subscriptionPlan::setBillingCycle);
+        Optional.ofNullable(updateSubscriptionPlanDTO.description()).ifPresent(subscriptionPlan::setDescription);
+        Optional.ofNullable(updateSubscriptionPlanDTO.trialDays()).ifPresent(subscriptionPlan::setTrialDays);
 
         subscriptionPlanRepository.save(subscriptionPlan);
 
-        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(), subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(), subscriptionPlan.getCreatedAt());
+        return new SubscriptionPlanResponseDTO(subscriptionPlan.getId(), subscriptionPlan.getName(),
+                subscriptionPlan.getPrice(),subscriptionPlan.getBillingCycle(), subscriptionPlan.getTrialDays(),
+                subscriptionPlan.getCreatedAt());
     }
 
     public void deleteSubscriptionPlan(UUID id) {
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
-                .orElseThrow(() -> new IllegalArgumentException("Plano não encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Plan not found."));
 
-        subscriptionPlan.setIsActive(false);
-        subscriptionPlanRepository.save(subscriptionPlan);
+        subscriptionPlanRepository.setSubscriptionPlanAsNonActive(subscriptionPlan);
     }
 }

@@ -13,13 +13,14 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "payload")
+@Table(name = "payment_payload")
 public class Payload {
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.AUTO)
     private UUID id;
 
     @NotNull
+    @Column(precision = 19, scale = 2)
     private BigDecimal amount;
 
     @NotNull
@@ -27,8 +28,9 @@ public class Payload {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    private PayloadType payloadType;
+    private PayloadType type;
 
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "plan_contract_id", referencedColumnName = "id")
     private PlanContract planContract;

@@ -1,6 +1,8 @@
 package com.signature.autosave.modules.email.campaign.service;
 
 import com.signature.autosave.infra.components.email.IEmailComponent;
+import com.signature.autosave.modules.contract.domain.entity.PlanContract;
+import com.signature.autosave.modules.contract.domain.enums.BillingStatus;
 import com.signature.autosave.modules.email.campaign.builder.EmailCampaignBuilder;
 import com.signature.autosave.modules.email.campaign.domain.entity.EmailCampaign;
 import com.signature.autosave.modules.email.campaign.domain.repository.EmailCampaignRepository;
@@ -11,6 +13,7 @@ import com.signature.autosave.modules.email.campaign.service.events.EmailCampaig
 import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignDeletedEvent;
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.email.content.domain.repository.EmailContentRepository;
+import com.signature.autosave.modules.email.content.service.events.EmailContentDeletedEvent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import com.signature.autosave.modules.subscription.domain.repository.SubscriptionPlanRepository;
 import com.signature.autosave.modules.user.domain.entity.User;
@@ -20,9 +23,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.UUID;
@@ -42,14 +49,14 @@ public class EmailCampaignService {
 
     @Transactional
     public EmailCampaignResponseDTO createEmailCampaign(CreateEmailCampaignDTO createEmailCampaignDTO, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        EmailContent emailContent = emailContentRepository.findById(createEmailCampaignDTO.getEmailContent())
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo de email não encontrado"));
+        EmailContent emailContent = emailContentRepository.findByIdAndIsActiveTrue(createEmailCampaignDTO.emailContent())
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         if(emailContent.getEditor() != user){
-            throw new IllegalArgumentException("O conteúdo de email deve ser criado pelo usuário para ser utilizado em uma campanha");
+            throw new IllegalArgumentException("The email content must be created by the user for use in a campaign.");
         }
 
         List<SubscriptionPlan> emailCampaignSubscriptionPlans = subscriptionPlanRepository.findEmailCampaignSubscriptionPlans(
@@ -57,7 +64,7 @@ public class EmailCampaignService {
         );
 
         EmailCampaign emailCampaign = EmailCampaignBuilder.builder()
-                .withTextPreview(createEmailCampaignDTO.getTextPreview())
+                .withTextPreview(createEmailCampaignDTO.textPreview())
                 .withEmailContent(emailContent)
                 .withSubscriptionPlans(emailCampaignSubscriptionPlans)
                 .build();
@@ -71,65 +78,80 @@ public class EmailCampaignService {
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isAvailable()
+                emailCampaign.isAvailable(),
+                emailCampaign.getCreatedAt()
         );
     }
 
     @Transactional(readOnly = true)
     public EmailCampaignResponseDTO listEmailCampaign(UUID id) {
-        EmailCampaign emailCampaign = emailCampaignRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+        EmailCampaign emailCampaign = emailCampaignRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         return new EmailCampaignResponseDTO(
                 emailCampaign.getId(),
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isAvailable()
+                emailCampaign.isAvailable(),
+                emailCampaign.getCreatedAt()
         );
     }
 
     @Transactional(readOnly = true)
-    public List<EmailCampaignResponseDTO> listEmailCampaigns(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+    public Page<EmailCampaignResponseDTO> listEmailCampaigns(UserDetails userDetails, Pageable pageable, String searchTerm) {
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return emailCampaignRepository.findByEmailContentEditor(user).stream().map(emailCampaign -> new EmailCampaignResponseDTO(
+        return emailCampaignRepository.findByEmailContentEditorAndIsActiveTrue(user.getId(), searchTerm, pageable).map(emailCampaign -> new EmailCampaignResponseDTO(
                 emailCampaign.getId(),
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isAvailable()
-        )).toList();
+                emailCampaign.isAvailable(),
+                emailCampaign.getCreatedAt()
+        ));
     }
 
     @Transactional(readOnly = true)
-    public List<EmailCampaignResponseDTO> listEmailCampaignsAvailable(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+    public Page<EmailCampaignResponseDTO> listEmailCampaignsAvailable(UserDetails userDetails, Pageable pageable, String searchTerm) {
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        return emailCampaignRepository.findAccessibleCampaignsByUser(user).stream().map(emailCampaign -> new EmailCampaignResponseDTO(
+        PlanContract userPlanContract = user.getPlanContract();
+
+        if (userPlanContract.getStatus() != BillingStatus.PAID){
+            throw new IllegalArgumentException("You do not have permission to read campaigns within a paid plan contract.");
+        }
+
+        UUID planId = userPlanContract
+                .getSubscriptionPlan()
+                .getId();
+
+        return emailCampaignRepository.findAccessibleCampaigns(planId, searchTerm, pageable).map(
+                emailCampaign -> new EmailCampaignResponseDTO(
                 emailCampaign.getId(),
                 emailCampaign.getTextPreview(),
                 emailCampaign.getEmailContent(),
                 emailCampaign.getSubscriptionPlans(),
-                emailCampaign.isAvailable()
-        )).toList();
+                emailCampaign.isAvailable(),
+                emailCampaign.getCreatedAt()
+        ));
     }
 
     @Transactional
     public void deleteEmailCampaign(UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        EmailCampaign emailCampaign = emailCampaignRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Conteúdo não encontrado"));
+        EmailCampaign emailCampaign = emailCampaignRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         if(emailCampaign.getEmailContent().getEditor() != user){
-            throw new IllegalArgumentException("Apenas o editor do conteúdo pode deletá-lo");
+            throw new IllegalArgumentException("You do not have permission to delete this campaign.");
         }
 
-        emailCampaignRepository.delete(emailCampaign);
+        emailCampaignRepository.setEmailCampaignAsNonActive(emailCampaign);
 
         publisher.publishEvent(new EmailCampaignDeletedEvent(emailCampaign.getId()));
     }
@@ -137,7 +159,7 @@ public class EmailCampaignService {
     @EventListener
     public void handleEmailCampaignEvent(EmailCampaignApprovedEvent emailCampaignApprovedEvent) {
         EmailCampaign emailCampaign = emailCampaignRepository.findById(emailCampaignApprovedEvent.emailCampaign())
-                .orElseThrow(() -> new IllegalArgumentException("Campanha de email não encontrada"));
+                .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
         emailCampaign.setAvailable(true);
         emailCampaignRepository.save(emailCampaign);
@@ -167,6 +189,20 @@ public class EmailCampaignService {
                 throw new RuntimeException(e);
             }
         });
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void cascadeDeleteEmailCampaigns(EmailContentDeletedEvent event) {
+
+        EmailContent emailContent = emailContentRepository.findById(event.emailContentId())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        emailCampaignRepository
+                .findAllByUserIdAndIsActiveTrue(emailContent.getEditor().getId())
+                .forEach(emailCampaign -> {
+                    emailCampaignRepository.setEmailCampaignAsNonActive(emailCampaign);
+                    publisher.publishEvent(new EmailCampaignDeletedEvent(emailCampaign.getId()));
+                });
     }
 
 }
