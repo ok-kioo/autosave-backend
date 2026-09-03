@@ -120,6 +120,14 @@
 			<version>6.0.0</version>
 		</dependency>
 
+		<!-- Source: https://mvnrepository.com/artifact/com.bucket4j/bucket4j-core -->
+		<dependency>
+			<groupId>com.bucket4j</groupId>
+			<artifactId>bucket4j-core</artifactId>
+			<version>8.10.1</version>
+			<scope>compile</scope>
+		</dependency>
+
 		<!-- Source: https://mvnrepository.com/artifact/software.amazon.awssdk/ses -->
 		<dependency>
 			<groupId>software.amazon.awssdk</groupId>
