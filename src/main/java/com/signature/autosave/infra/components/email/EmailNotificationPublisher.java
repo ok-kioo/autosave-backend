@@ -7,9 +7,8 @@ import com.signature.autosave.modules.email.content.service.events.EmailContentU
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,7 +65,7 @@ public class EmailNotificationPublisher {
         );
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void publishUpdatedContentEmail(EmailContentUpdatedEvent emailContentUpdatedEvent){
 
         String template = this.buildTemplate(
@@ -79,12 +78,12 @@ public class EmailNotificationPublisher {
                 frontEndUrl+"/email/content/review" + emailContentUpdatedEvent.emailCampaignReviewId()
         );
 
-        this.publish(UUID.randomUUID(), EmailNotificationMessage.EmailType.TO,
+        this.publish(emailContentUpdatedEvent.eventId(), EmailNotificationMessage.EmailType.TO,
                 Collections.singletonList(emailContentUpdatedEvent.emailCampaignReviewerEmail()),
                 "Revisão de campanha de email", template);
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void publishSendEmailCampaign(EmailCampaignSendEvent emailCampaignSendEvent){
 
         String template = this.buildTemplate(
@@ -100,7 +99,7 @@ public class EmailNotificationPublisher {
 
         for (List<String> batch : batches) {
             this.publish(
-                    UUID.randomUUID(),
+                    emailCampaignSendEvent.eventId(),
                     EmailNotificationMessage.EmailType.BCC,
                     batch,
                     emailCampaignSendEvent.emailContent().getSubject(),

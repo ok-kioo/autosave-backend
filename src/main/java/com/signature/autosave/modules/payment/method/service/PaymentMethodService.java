@@ -5,7 +5,7 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.customer.Customer;
 import com.mercadopago.resources.customer.CustomerCard;
-import com.signature.autosave.infra.components.intermediation.IIntermediationComponent;
+import com.signature.autosave.infra.components.intermediation.IGatewayComponent;
 import com.signature.autosave.modules.payment.method.builder.CreditCardPaymentMethodBuilder;
 import com.signature.autosave.modules.payment.method.builder.PaymentMethodBuilder;
 import com.signature.autosave.modules.payment.method.builder.PixPaymentMethodBuilder;
@@ -20,13 +20,12 @@ import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -38,7 +37,7 @@ public class PaymentMethodService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final CreditCardPaymentMethodRepository creditMethodRepository;
     private final PixPaymentMethodRepository pixMethodRepository;
-    private final IIntermediationComponent mpComponent;
+    private final IGatewayComponent gatewayComponent;
 
     @Transactional
     public PaymentMethodResponseDTO createPaymentMethod(RegisterPaymentMethodDTO registerPaymentMethod, UserDetails userDetails) throws MPException, MPApiException {
@@ -81,6 +80,7 @@ public class PaymentMethodService {
         return responseDTOBuild(paymentMethod, user);
     }
 
+    @Transactional
     public PaymentMethodResponseDTO updatePaymentMethod(UUID id, UpdatePaymentMethodDTO updatePaymentMethodDTO, UserDetails userDetails) throws MPException, MPApiException {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
@@ -102,6 +102,7 @@ public class PaymentMethodService {
         return responseDTOBuild(paymentMethod, user);
     }
 
+    @Transactional
     public void deletePaymentMethod(UUID id, UserDetails userDetails) throws MPException, MPApiException {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found."));
@@ -141,8 +142,8 @@ public class PaymentMethodService {
             throw new RuntimeException("It is necessary to register the card with the token, issuerId, and paymentMethodId fields filled in.");
         }
 
-        Customer customer = mpComponent.createCustomer(registerPaymentMethodDTO);
-        CustomerCard customerCard = mpComponent.saveCreditCard(registerPaymentMethodDTO, customer);
+        Customer customer = gatewayComponent.createCustomer(registerPaymentMethodDTO);
+        CustomerCard customerCard = gatewayComponent.saveCreditCard(registerPaymentMethodDTO, customer);
 
         CreditCardPaymentMethod creditCard = CreditCardPaymentMethodBuilder.builder()
                 .withBase(basePaymentMethodBuild(registerPaymentMethodDTO, user))
@@ -167,7 +168,7 @@ public class PaymentMethodService {
     }
 
     private PixResponseDTO handlePixCreation(RegisterPaymentMethodDTO registerPaymentMethodDTO, User user) throws MPException, MPApiException {
-        Customer customer = mpComponent.createCustomer(registerPaymentMethodDTO);
+        Customer customer = gatewayComponent.createCustomer(registerPaymentMethodDTO);
 
         PixPaymentMethod pix = PixPaymentMethodBuilder.builder()
                         .withBase(basePaymentMethodBuild(registerPaymentMethodDTO, user))
@@ -231,7 +232,7 @@ public class PaymentMethodService {
                 .withUser(user).build();
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void cascadeDeletePaymentMethods(UserDeletedEvent event) {
 
         User user = userRepository.findById(event.userId())

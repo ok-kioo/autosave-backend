@@ -83,6 +83,7 @@ public class PayloadService {
 
     }
 
+    @Transactional
     private void handleApprovedPayment(Payment payment, PlanContract planContract){
         Payload payload = new Payload();
         payload.setPaymentId(payment.getId());
@@ -96,6 +97,7 @@ public class PayloadService {
         publisher.publishEvent(new PayloadCreateEvent(planContract.getId()));
     }
 
+    @Transactional
     private void handleRefund(Payment payment, PlanContract planContract){
         Payload payload = new Payload();
         payload.setPaymentId(payment.getId());

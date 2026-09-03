@@ -15,6 +15,7 @@ import com.signature.autosave.modules.email.campaign.service.events.EmailCampaig
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.email.content.domain.repository.EmailContentRepository;
 import com.signature.autosave.modules.email.content.service.events.EmailContentDeletedEvent;
+import com.signature.autosave.modules.outbox.service.events.OutboxEmailCampaignSendEvent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import com.signature.autosave.modules.subscription.domain.repository.SubscriptionPlanRepository;
 import com.signature.autosave.modules.user.domain.entity.User;
@@ -28,8 +29,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.UUID;
@@ -165,11 +164,12 @@ public class EmailCampaignService {
         emailCampaign.setAvailable(true);
         emailCampaignRepository.save(emailCampaign);
 
-        publisher.publishEvent(new EmailCampaignSendEvent(emailCampaign.getId(), emailCampaign.getEmailContent(),
-                emailCampaign.getTextPreview(), usersToSend));
+        publisher.publishEvent(new OutboxEmailCampaignSendEvent(
+                new EmailCampaignSendEvent(null, emailCampaign.getId(), emailCampaign.getEmailContent(), emailCampaign.getTextPreview(), usersToSend))
+        );
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void cascadeDeleteEmailCampaigns(EmailContentDeletedEvent event) {
 
         EmailContent emailContent = emailContentRepository.findById(event.emailContentId())

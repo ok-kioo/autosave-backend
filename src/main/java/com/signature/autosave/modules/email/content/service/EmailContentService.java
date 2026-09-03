@@ -11,18 +11,18 @@ import com.signature.autosave.modules.email.content.dto.EmailContentResponseDTO;
 import com.signature.autosave.modules.email.content.dto.UpdateEmailContentDTO;
 import com.signature.autosave.modules.email.content.service.events.EmailContentDeletedEvent;
 import com.signature.autosave.modules.email.content.service.events.EmailContentUpdatedEvent;
+import com.signature.autosave.modules.outbox.service.events.OutboxEmailContentUpdatedEvent;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,6 +37,7 @@ public class EmailContentService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher publisher;
 
+    @Transactional
     public EmailContentResponseDTO createEmailContent(CreateEmailContentDTO createEmailContentDTO, UserDetails userDetails){
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -92,6 +93,7 @@ public class EmailContentService {
         ));
     }
 
+    @Transactional
     public EmailContentResponseDTO updateEmailContent(UUID id, UpdateEmailContentDTO updateEmailContentDTO, UserDetails userDetails) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -121,8 +123,9 @@ public class EmailContentService {
         emailCampaignReviews.forEach(emailCampaignReview -> {
             emailCampaignReview.setStatus(EmailCampaignStatus.UPDATED);
             emailCampaignReviewRepository.save(emailCampaignReview);
-            publisher.publishEvent(new EmailContentUpdatedEvent(emailContent, emailCampaignReview.getId(),
-                emailCampaignReview.getReviewer().getEmail()));
+            publisher.publishEvent(new OutboxEmailContentUpdatedEvent(
+                    new EmailContentUpdatedEvent(null, emailContent, emailCampaignReview.getId(), emailCampaignReview.getReviewer().getEmail()))
+            );
         });
 
         return new EmailContentResponseDTO(
@@ -135,6 +138,7 @@ public class EmailContentService {
         );
     }
 
+    @Transactional
     public void deleteEmailContent(UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -151,7 +155,7 @@ public class EmailContentService {
 
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void cascadeDeleteEmailContents(UserDeletedEvent event) {
 
         User user = userRepository.findById(event.userId())

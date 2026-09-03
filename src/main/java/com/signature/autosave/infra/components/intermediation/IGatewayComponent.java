@@ -13,7 +13,7 @@ import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPla
 
 import java.time.LocalDate;
 
-public interface IIntermediationComponent {
+public interface IGatewayComponent {
     Payment createPixPayment(PixPaymentMethod pixPaymentMethod, SubscriptionPlan subscriptionPlan, PlanContract planContract, String idempotencyKey) throws MPApiException, MPException;
     Payment createCreditCardPayment(CreditCardPaymentMethod creditCardPaymentMethod, SubscriptionPlan subscriptionPlan, PlanContract planContract, Integer installments, String idempotencyKey) throws MPException, MPApiException;
 
