@@ -1,6 +1,5 @@
 package com.signature.autosave.modules.email.content.service;
 
-import com.signature.autosave.infra.components.email.IEmailComponent;
 import com.signature.autosave.modules.email.campaign.domain.entity.EmailCampaignReview;
 import com.signature.autosave.modules.email.campaign.domain.enums.EmailCampaignStatus;
 import com.signature.autosave.modules.email.campaign.domain.repository.EmailCampaignReviewRepository;
@@ -11,11 +10,11 @@ import com.signature.autosave.modules.email.content.dto.CreateEmailContentDTO;
 import com.signature.autosave.modules.email.content.dto.EmailContentResponseDTO;
 import com.signature.autosave.modules.email.content.dto.UpdateEmailContentDTO;
 import com.signature.autosave.modules.email.content.service.events.EmailContentDeletedEvent;
+import com.signature.autosave.modules.email.content.service.events.EmailContentUpdatedEvent;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -36,12 +35,7 @@ public class EmailContentService {
     private final EmailContentRepository emailContentRepository;
     private final EmailCampaignReviewRepository emailCampaignReviewRepository;
     private final UserRepository userRepository;
-    private final IEmailComponent emailComponent;
     private final ApplicationEventPublisher publisher;
-
-
-    @Value("${app.frontend.url}")
-    private String frontEndUrl;
 
     public EmailContentResponseDTO createEmailContent(CreateEmailContentDTO createEmailContentDTO, UserDetails userDetails){
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
@@ -128,7 +122,9 @@ public class EmailContentService {
             if(emailCampaignReview.getStatus() == EmailCampaignStatus.PENDING){
                 emailCampaignReview.setStatus(EmailCampaignStatus.UPDATED);
                 emailCampaignReviewRepository.save(emailCampaignReview);
-                emailContentUpdatedNotify(emailContent, emailCampaignReview.getId(), emailCampaignReview.getReviewer().getEmail());
+                publisher.publishEvent(new EmailContentUpdatedEvent(emailContent, emailCampaignReview.getId(),
+                        emailCampaignReview.getReviewer().getEmail()));
+
             }
         });
 
@@ -156,27 +152,6 @@ public class EmailContentService {
         emailContentRepository.setEmailContentAsNonActive(emailContent);
         publisher.publishEvent(new EmailContentDeletedEvent(emailContent.getId()));
 
-    }
-
-    private void emailContentUpdatedNotify(EmailContent emailContent, UUID emailCampaignReviewId, String emailCampaignReviewerEmail){
-
-        String template = emailComponent.buildTemplate(
-                emailContent.getEditor().getName(),
-                LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")),
-                "Revisão de campanha de email",
-                "Conteúdo de email atualizado",
-                "O conteúdo do email '" + emailContent.getSubject() + "', referente a campanha revisada por você foi atualizado. " +
-                        "Por favor, revise as alterações e aprove ou rejeite a campanha de email associada.",
-                frontEndUrl+"/email/content/review"+emailCampaignReviewId
-        );
-
-        try {
-            emailComponent.sendEmail(emailCampaignReviewerEmail,
-                    "Conteúdo de email atualizado - Revisão de campanha de email",
-                    template);
-        } catch (jakarta.mail.MessagingException e) {
-            throw new RuntimeException("Erro ao enviar email de notificação", e);
-        }
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
