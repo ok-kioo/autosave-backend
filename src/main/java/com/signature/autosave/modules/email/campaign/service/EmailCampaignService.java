@@ -11,14 +11,15 @@ import com.signature.autosave.modules.email.campaign.dto.EmailCampaignResponseDT
 import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignApprovedEvent;
 import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignCreatedEvent;
 import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignDeletedEvent;
+import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignSendEvent;
 import com.signature.autosave.modules.email.content.domain.entity.EmailContent;
 import com.signature.autosave.modules.email.content.domain.repository.EmailContentRepository;
 import com.signature.autosave.modules.email.content.service.events.EmailContentDeletedEvent;
+import com.signature.autosave.modules.outbox.service.events.OutboxEmailCampaignSendEvent;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import com.signature.autosave.modules.subscription.domain.repository.SubscriptionPlanRepository;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
-import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,8 +29,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.UUID;
@@ -161,37 +160,16 @@ public class EmailCampaignService {
         EmailCampaign emailCampaign = emailCampaignRepository.findById(emailCampaignApprovedEvent.emailCampaign())
                 .orElseThrow(() -> new IllegalArgumentException("Email content not found."));
 
+        List<String> usersToSend = userRepository.findUsersEligibleForCampaign(emailCampaign.getId());
         emailCampaign.setAvailable(true);
         emailCampaignRepository.save(emailCampaign);
 
-        this.sendCampaign(emailCampaign);
-    }
-
-    private void sendCampaign(EmailCampaign emailCampaign){
-        String template = IEmailComponent.buildTemplate(
-                emailCampaign.getEmailContent().getEditor().getName(),
-                emailCampaign.getEmailContent().getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")),
-                emailCampaign.getEmailContent().getTopic(),
-                emailCampaign.getEmailContent().getSubject(),
-                emailCampaign.getTextPreview(),
-                frontEndUrl+"/email/content/"+emailCampaign.getId()
+        publisher.publishEvent(new OutboxEmailCampaignSendEvent(
+                new EmailCampaignSendEvent(null, emailCampaign.getId(), emailCampaign.getEmailContent(), emailCampaign.getTextPreview(), usersToSend))
         );
-
-        List<User> usersToSend = userRepository.findUsersEligibleForCampaign(emailCampaign.getId());
-        usersToSend.forEach(user -> {
-            try {
-                IEmailComponent.sendEmail(
-                        user.getEmail(),
-                        emailCampaign.getEmailContent().getSubject(),
-                        template
-                );
-            } catch (MessagingException e) {
-                throw new RuntimeException(e);
-            }
-        });
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void cascadeDeleteEmailCampaigns(EmailContentDeletedEvent event) {
 
         EmailContent emailContent = emailContentRepository.findById(event.emailContentId())

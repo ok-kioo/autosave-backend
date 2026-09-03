@@ -52,6 +52,7 @@ public class UserService {
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
+    @Transactional
     public UserResponseDTO updateUser(UpdateUserDTO updateUserDTO, UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -70,6 +71,7 @@ public class UserService {
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
+    @Transactional
     public UserResponseDTO updateRoleUser(UpdateRoleUserDTO updateRoleUserDTO, UUID id) {
         User user = userRepository.findByIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));

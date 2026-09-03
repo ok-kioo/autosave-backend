@@ -1,6 +1,5 @@
 package com.signature.autosave.modules.email.content.service;
 
-import com.signature.autosave.infra.components.email.IEmailComponent;
 import com.signature.autosave.modules.email.campaign.domain.entity.EmailCampaignReview;
 import com.signature.autosave.modules.email.campaign.domain.enums.EmailCampaignStatus;
 import com.signature.autosave.modules.email.campaign.domain.repository.EmailCampaignReviewRepository;
@@ -11,19 +10,19 @@ import com.signature.autosave.modules.email.content.dto.CreateEmailContentDTO;
 import com.signature.autosave.modules.email.content.dto.EmailContentResponseDTO;
 import com.signature.autosave.modules.email.content.dto.UpdateEmailContentDTO;
 import com.signature.autosave.modules.email.content.service.events.EmailContentDeletedEvent;
+import com.signature.autosave.modules.email.content.service.events.EmailContentUpdatedEvent;
+import com.signature.autosave.modules.outbox.service.events.OutboxEmailContentUpdatedEvent;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,13 +35,9 @@ public class EmailContentService {
     private final EmailContentRepository emailContentRepository;
     private final EmailCampaignReviewRepository emailCampaignReviewRepository;
     private final UserRepository userRepository;
-    private final IEmailComponent emailComponent;
     private final ApplicationEventPublisher publisher;
 
-
-    @Value("${app.frontend.url}")
-    private String frontEndUrl;
-
+    @Transactional
     public EmailContentResponseDTO createEmailContent(CreateEmailContentDTO createEmailContentDTO, UserDetails userDetails){
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -98,6 +93,7 @@ public class EmailContentService {
         ));
     }
 
+    @Transactional
     public EmailContentResponseDTO updateEmailContent(UUID id, UpdateEmailContentDTO updateEmailContentDTO, UserDetails userDetails) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -125,11 +121,11 @@ public class EmailContentService {
         emailContentRepository.save(emailContent);
 
         emailCampaignReviews.forEach(emailCampaignReview -> {
-            if(emailCampaignReview.getStatus() == EmailCampaignStatus.PENDING){
-                emailCampaignReview.setStatus(EmailCampaignStatus.UPDATED);
-                emailCampaignReviewRepository.save(emailCampaignReview);
-                emailContentUpdatedNotify(emailContent, emailCampaignReview.getId(), emailCampaignReview.getReviewer().getEmail());
-            }
+            emailCampaignReview.setStatus(EmailCampaignStatus.UPDATED);
+            emailCampaignReviewRepository.save(emailCampaignReview);
+            publisher.publishEvent(new OutboxEmailContentUpdatedEvent(
+                    new EmailContentUpdatedEvent(null, emailContent, emailCampaignReview.getId(), emailCampaignReview.getReviewer().getEmail()))
+            );
         });
 
         return new EmailContentResponseDTO(
@@ -142,6 +138,7 @@ public class EmailContentService {
         );
     }
 
+    @Transactional
     public void deleteEmailContent(UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -158,28 +155,7 @@ public class EmailContentService {
 
     }
 
-    private void emailContentUpdatedNotify(EmailContent emailContent, UUID emailCampaignReviewId, String emailCampaignReviewerEmail){
-
-        String template = emailComponent.buildTemplate(
-                emailContent.getEditor().getName(),
-                LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")),
-                "Revisão de campanha de email",
-                "Conteúdo de email atualizado",
-                "O conteúdo do email '" + emailContent.getSubject() + "', referente a campanha revisada por você foi atualizado. " +
-                        "Por favor, revise as alterações e aprove ou rejeite a campanha de email associada.",
-                frontEndUrl+"/email/content/review"+emailCampaignReviewId
-        );
-
-        try {
-            emailComponent.sendEmail(emailCampaignReviewerEmail,
-                    "Conteúdo de email atualizado - Revisão de campanha de email",
-                    template);
-        } catch (jakarta.mail.MessagingException e) {
-            throw new RuntimeException("Erro ao enviar email de notificação", e);
-        }
-    }
-
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void cascadeDeleteEmailContents(UserDeletedEvent event) {
 
         User user = userRepository.findById(event.userId())

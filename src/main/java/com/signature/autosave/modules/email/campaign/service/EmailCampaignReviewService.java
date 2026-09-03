@@ -15,11 +15,10 @@ import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +32,7 @@ public class EmailCampaignReviewService {
     private final UserRepository userRepository;
     private final ApplicationEventPublisher publisher;
 
-
+    @Transactional
     public EmailCampaignReviewResponseDTO createEmailCampaignReview(CreateEmailCampaignReviewDTO createEmailCampaignReviewDTO, UserDetails userDetails) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -68,6 +67,7 @@ public class EmailCampaignReviewService {
         );
     }
 
+    @Transactional
     public EmailCampaignReviewResponseDTO updateEmailCampaignReview(UUID id, UpdateEmailCampaignReviewDTO updateEmailCampaignReviewDTO, UserDetails userDetails) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -76,20 +76,24 @@ public class EmailCampaignReviewService {
                 .orElseThrow(() -> new IllegalArgumentException("Review not found."));
 
         if (emailCampaignReview.getEmailCampaign().isAvailable()){
-            throw new IllegalArgumentException("You can not delete this review, this email campaign is already available.");
+            throw new IllegalArgumentException("You can not update this review, this email campaign is already available.");
         }
 
         if (emailCampaignReview.getReviewer() != user) {
             throw new IllegalArgumentException("You do not have permission to update this review.");
         }
 
+        List<EmailCampaignReview> emailCampaignReviews = emailCampaignReviewRepository.
+                findByEmailCampaignAndIsActiveTrue(emailCampaignReview.getEmailCampaign());
+
+        if(!emailCampaignReviews.contains(EmailCampaignStatus.UPDATED)){
+            throw new IllegalArgumentException("You can not update a review without content corrections");
+        }
+
         Optional.ofNullable(updateEmailCampaignReviewDTO.comment()).ifPresent(emailCampaignReview::setComment);
         Optional.ofNullable(updateEmailCampaignReviewDTO.status()).ifPresent(emailCampaignReview::setStatus);
 
         emailCampaignReviewRepository.save(emailCampaignReview);
-
-        List<EmailCampaignReview> emailCampaignReviews = emailCampaignReviewRepository.
-                findByEmailCampaignAndIsActiveTrue(emailCampaignReview.getEmailCampaign());
 
         if (emailCampaignReviews.contains(EmailCampaignStatus.APPROVED) && emailCampaignReview.getStatus() == EmailCampaignStatus.APPROVED) {
             emailCampaignApproved(emailCampaignReview.getEmailCampaign());
@@ -152,6 +156,7 @@ public class EmailCampaignReviewService {
         )).toList();
     }
 
+    @Transactional
     public void deleteEmailCampaignReview(UUID id, UserDetails userDetails) {
         User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
                 .orElseThrow(() -> new IllegalArgumentException("User not found."));
@@ -174,7 +179,7 @@ public class EmailCampaignReviewService {
         publisher.publishEvent(new EmailCampaignApprovedEvent(emailCampaign.getId()));
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void cascadeDeleteEmailCampaigns(EmailCampaignDeletedEvent event) {
 
         EmailCampaign emailCampaign = emailCampaignRepository.findById(event.emailCampaignId())

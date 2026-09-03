@@ -1,6 +1,5 @@
 package com.signature.autosave.infra.components.intermediation;
 
-import com.mercadopago.MercadoPagoConfig;
 import com.mercadopago.client.common.IdentificationRequest;
 import com.mercadopago.client.customer.CustomerCardClient;
 import com.mercadopago.client.customer.CustomerCardCreateRequest;
@@ -26,7 +25,6 @@ import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPla
 import kong.unirest.HttpResponse;
 import kong.unirest.JsonNode;
 import kong.unirest.Unirest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -38,14 +36,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
-public class MPComponent implements IIntermediationComponent {
-    private String accessToken;
+public class MPComponent implements IGatewayComponent {
 
-    public MPComponent(@Value("${app.mp.access.token}") String accessToken) {
-        MercadoPagoConfig.setAccessToken(accessToken);
-        this.accessToken = accessToken;
-    }
+    @Value("${app.mp.access.token}")
+    private String accessToken;
 
     @Override
     public Payment createPixPayment(PixPaymentMethod pixPaymentMethod, SubscriptionPlan subscriptionPlan, PlanContract planContract, String idempotencyKey) throws MPApiException, MPException {

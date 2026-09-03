@@ -26,7 +26,7 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     void setUserAsNonActive(@Param("user") User user);
 
     @Query("""
-    SELECT u
+    SELECT u.email
     FROM User u
     JOIN u.planContract pc
     JOIN pc.subscriptionPlan sp
@@ -38,5 +38,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
       AND sp.isActive = true
       AND u.isActive = true
 """)
-    List<User> findUsersEligibleForCampaign(@Param("campaignId") UUID campaignId);
+    List<String> findUsersEligibleForCampaign(@Param("campaignId") UUID campaignId);
 }

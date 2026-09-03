@@ -1,6 +1,6 @@
 package com.signature.autosave.modules.subscription.service;
 
-import com.signature.autosave.infra.components.intermediation.IIntermediationComponent;
+import com.signature.autosave.infra.components.intermediation.IGatewayComponent;
 import com.signature.autosave.modules.subscription.builder.SubscriptionPlanBuilder;
 import com.signature.autosave.modules.subscription.domain.entity.SubscriptionPlan;
 import com.signature.autosave.modules.subscription.domain.repository.SubscriptionPlanRepository;
@@ -20,8 +20,9 @@ import java.util.UUID;
 @Service
 public class SubscriptionPlanService {
     private final SubscriptionPlanRepository subscriptionPlanRepository;
-    private final IIntermediationComponent mpComponent;
+    private final IGatewayComponent gatewayComponent;
 
+    @Transactional
     public SubscriptionPlanResponseDTO createSubscriptionPlan(CreateSubscriptionPlanDTO createDTO){
         SubscriptionPlan subscriptionPlan = SubscriptionPlanBuilder.builder()
                     .withName(createDTO.name())
@@ -31,7 +32,7 @@ public class SubscriptionPlanService {
                     .withTrialDays(createDTO.trialDays())
                     .build();
 
-        String preapprovalPlanId = mpComponent.createPreapprovalPlan(subscriptionPlan);
+        String preapprovalPlanId = gatewayComponent.createPreapprovalPlan(subscriptionPlan);
         subscriptionPlan.setPreapprovalPlanId(preapprovalPlanId);
 
         subscriptionPlanRepository.save(subscriptionPlan);
@@ -65,6 +66,7 @@ public class SubscriptionPlanService {
                 ));
     }
 
+    @Transactional
     public SubscriptionPlanResponseDTO updateSubscriptionPlan(UpdateSubscriptionPlanDTO updateSubscriptionPlanDTO, UUID id) {
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
                 .orElseThrow(() -> new IllegalArgumentException("Plan not found."));
@@ -82,6 +84,7 @@ public class SubscriptionPlanService {
                 subscriptionPlan.getCreatedAt());
     }
 
+    @Transactional
     public void deleteSubscriptionPlan(UUID id) {
         SubscriptionPlan subscriptionPlan = subscriptionPlanRepository.findByIdAndIsActive(id, true)
                 .orElseThrow(() -> new IllegalArgumentException("Plan not found."));

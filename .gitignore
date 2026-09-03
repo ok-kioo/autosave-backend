@@ -45,7 +45,8 @@ build/
 .mtj.tmp/
 
 # Enviroment files
-.env
+.env.prod
+.env.*
 
 # Package Files #
 *.jar

@@ -11,11 +11,10 @@ import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserNodeRepository;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.UUID;
@@ -30,7 +29,7 @@ public class CampaignNodeService {
     private final CommentNodeRepository commentNodeRepository;
     private final UserRepository userRepository;
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void registerCampaign(EmailCampaignCreatedEvent event) {
 
         emailCampaignRepository.findByIdAndIsActiveTrue(event.emailCampaign())
@@ -45,7 +44,7 @@ public class CampaignNodeService {
         campaignNodeRepository.save(campaignNode);
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void deleteCampaign(EmailCampaignDeletedEvent event) {
 
         campaignNodeRepository.findById(event.emailCampaignId()).orElseThrow(() -> new RuntimeException("Campaign node not found."));

@@ -21,7 +21,7 @@ public class AuthService implements UserDetailsService {
     private final IAuthComponent jwtComponent;
 
     public AuthResponseDTO login(LoginDTO user) {
-        User existingUser = userRepository.findByEmail(user.email())
+        User existingUser = userRepository.findByEmailAndIsActiveTrue(user.email())
                 .orElseThrow(() -> new IllegalArgumentException("Usuário com este e-mail não existe"));
 
         if(!passwordEncoder.matches(user.password(), existingUser.getPassword())){
@@ -37,7 +37,7 @@ public class AuthService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByEmail(username)
+        return userRepository.findByEmailAndIsActiveTrue(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado com email: " + username));
     }
 }
