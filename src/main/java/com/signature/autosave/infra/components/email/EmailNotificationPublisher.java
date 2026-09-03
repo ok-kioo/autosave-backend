@@ -1,5 +1,6 @@
 package com.signature.autosave.infra.components.email;
 
+import com.google.common.collect.Lists;
 import com.signature.autosave.infra.configuration.RabbitMQConfig;
 import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignSendEvent;
 import com.signature.autosave.modules.email.content.service.events.EmailContentUpdatedEvent;
@@ -95,8 +96,17 @@ public class EmailNotificationPublisher {
                 frontEndUrl+"/email/content/" + emailCampaignSendEvent.emailCampaignId()
         );
 
-        this.publish(UUID.randomUUID(), EmailNotificationMessage.EmailType.BCC, emailCampaignSendEvent.usersToSend(),
-                "Revisão de campanha de email", template);
+        List<List<String>> batches = Lists.partition(emailCampaignSendEvent.usersToSend(), 50);
+
+        for (List<String> batch : batches) {
+            this.publish(
+                    UUID.randomUUID(),
+                    EmailNotificationMessage.EmailType.BCC,
+                    batch,
+                    emailCampaignSendEvent.emailContent().getSubject(),
+                    template
+            );
+        }
     }
 
     private void publish(UUID publishId, EmailNotificationMessage.EmailType emailType, List<String> recipients,

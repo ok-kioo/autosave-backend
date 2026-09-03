@@ -25,13 +25,13 @@ public class EmailNotificationConsumer {
         try {
             switch (message.type()) {
 
-                case TO -> emailComponent.sendEmail(
+                case TO -> emailComponent.sendEmailTo(
                         message.recipients().getFirst(),
                         message.subject(),
                         message.html()
                 );
 
-                case BCC -> emailComponent.sendEmail(
+                case BCC -> emailComponent.sendEmailBcc(
                         message.recipients(),
                         message.subject(),
                         message.html()

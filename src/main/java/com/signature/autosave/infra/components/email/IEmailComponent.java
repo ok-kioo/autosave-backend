@@ -5,6 +5,6 @@ import jakarta.mail.MessagingException;
 import java.util.List;
 
 public interface IEmailComponent {
-    void sendEmail(String to, String subject, String html) throws MessagingException;
-    void sendEmail(List<String> bcc, String subject, String html) throws MessagingException;
+    void sendEmailTo(String to, String subject, String html) throws MessagingException;
+    void sendEmailBcc(List<String> bcc, String subject, String html) throws MessagingException;
 }
