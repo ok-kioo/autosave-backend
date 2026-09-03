@@ -119,13 +119,10 @@ public class EmailContentService {
         emailContentRepository.save(emailContent);
 
         emailCampaignReviews.forEach(emailCampaignReview -> {
-            if(emailCampaignReview.getStatus() == EmailCampaignStatus.PENDING){
-                emailCampaignReview.setStatus(EmailCampaignStatus.UPDATED);
-                emailCampaignReviewRepository.save(emailCampaignReview);
-                publisher.publishEvent(new EmailContentUpdatedEvent(emailContent, emailCampaignReview.getId(),
-                        emailCampaignReview.getReviewer().getEmail()));
-
-            }
+            emailCampaignReview.setStatus(EmailCampaignStatus.UPDATED);
+            emailCampaignReviewRepository.save(emailCampaignReview);
+            publisher.publishEvent(new EmailContentUpdatedEvent(emailContent, emailCampaignReview.getId(),
+                emailCampaignReview.getReviewer().getEmail()));
         });
 
         return new EmailContentResponseDTO(

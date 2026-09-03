@@ -11,24 +11,32 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class EmailNotificationConsumer {
-
     private final IEmailComponent emailComponent;
 
     @RabbitListener(queues = RabbitMQConfig.EMAIL_QUEUE)
     public void consume(EmailNotificationMessage message) {
 
         log.info(
-                "Processing email notification. publishId={}, to={}",
+                "Processing email notification. publishId={}, type={}",
                 message.publishId(),
-                message.to()
+                message.type()
         );
 
         try {
-            emailComponent.sendEmail(
-                    message.to(),
-                    message.subject(),
-                    message.html()
-            );
+            switch (message.type()) {
+
+                case TO -> emailComponent.sendEmail(
+                        message.recipients().getFirst(),
+                        message.subject(),
+                        message.html()
+                );
+
+                case BCC -> emailComponent.sendEmail(
+                        message.recipients(),
+                        message.subject(),
+                        message.html()
+                );
+            }
 
         } catch (MessagingException e) {
             throw new RuntimeException(

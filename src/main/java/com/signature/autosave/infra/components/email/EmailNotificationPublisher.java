@@ -1,6 +1,7 @@
 package com.signature.autosave.infra.components.email;
 
 import com.signature.autosave.infra.configuration.RabbitMQConfig;
+import com.signature.autosave.modules.email.campaign.service.events.EmailCampaignSendEvent;
 import com.signature.autosave.modules.email.content.service.events.EmailContentUpdatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,17 +78,36 @@ public class EmailNotificationPublisher {
                 frontEndUrl+"/email/content/review" + emailContentUpdatedEvent.emailCampaignReviewId()
         );
 
-        this.publish(UUID.randomUUID(), emailContentUpdatedEvent.emailCampaignReviewerEmail(),
+        this.publish(UUID.randomUUID(), EmailNotificationMessage.EmailType.TO,
+                Collections.singletonList(emailContentUpdatedEvent.emailCampaignReviewerEmail()),
                 "Revisão de campanha de email", template);
     }
 
-    private void publish(UUID publishId, String to, String subject, String html) {
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void publishSendEmailCampaign(EmailCampaignSendEvent emailCampaignSendEvent){
+
+        String template = this.buildTemplate(
+                emailCampaignSendEvent.emailContent().getEditor().getName(),
+                emailCampaignSendEvent.emailContent().getCreatedAt().format(java.time.format.DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss")),
+                emailCampaignSendEvent.emailContent().getTopic(),
+                emailCampaignSendEvent.emailContent().getSubject(),
+                emailCampaignSendEvent.textPreview(),
+                frontEndUrl+"/email/content/" + emailCampaignSendEvent.emailCampaignId()
+        );
+
+        this.publish(UUID.randomUUID(), EmailNotificationMessage.EmailType.BCC, emailCampaignSendEvent.usersToSend(),
+                "Revisão de campanha de email", template);
+    }
+
+    private void publish(UUID publishId, EmailNotificationMessage.EmailType emailType, List<String> recipients,
+                         String subject, String html) {
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.EMAIL_EXCHANGE,
                 RabbitMQConfig.EMAIL_ROUTING_KEY,
                 new EmailNotificationMessage(
                         publishId,
-                        to,
+                        emailType,
+                        recipients,
                         subject,
                         html
                 )

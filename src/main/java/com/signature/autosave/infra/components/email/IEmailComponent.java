@@ -2,9 +2,9 @@ package com.signature.autosave.infra.components.email;
 
 import jakarta.mail.MessagingException;
 
+import java.util.List;
+
 public interface IEmailComponent {
     void sendEmail(String to, String subject, String html) throws MessagingException;
-
-    String buildTemplate(String name, String datetime, String topic, String title, String previewText, String buttonUrl);
-
+    void sendEmail(List<String> bcc, String subject, String html) throws MessagingException;
 }
