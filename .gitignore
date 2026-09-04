@@ -46,7 +46,8 @@ build/
 
 # Enviroment files
 .env.prod
-.env.*
+.env.dev
+.env
 
 # Package Files #
 *.jar
