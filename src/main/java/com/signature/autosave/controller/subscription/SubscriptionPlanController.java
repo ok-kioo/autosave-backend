@@ -6,12 +6,14 @@ import com.signature.autosave.modules.subscription.dto.UpdateSubscriptionPlanDTO
 import com.signature.autosave.modules.subscription.service.SubscriptionPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -49,9 +51,9 @@ public class SubscriptionPlanController {
     }
 
     @GetMapping("")
-    public ResponseEntity<?> listSubscriptions() {
+    public ResponseEntity<?> listSubscriptions(@PageableDefault(size = 10, sort = "name") Pageable pageable) {
         try{
-            List<SubscriptionPlanResponseDTO> result = subscriptionPlanService.listSubscriptions();
+            Page<SubscriptionPlanResponseDTO> result = subscriptionPlanService.listSubscriptions(pageable);
 
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 

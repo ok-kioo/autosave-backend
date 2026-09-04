@@ -9,9 +9,7 @@ public enum EmailTopic {
     BOOKS("Livros"),
     VARIETY("Variedades"),;
 
-    private String displayName;
-
     EmailTopic(String name) {
-        this.displayName = this.name();
+        String displayName = this.name();
     }
 }

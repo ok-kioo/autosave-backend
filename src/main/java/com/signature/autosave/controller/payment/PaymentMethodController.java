@@ -6,6 +6,9 @@ import com.signature.autosave.modules.payment.method.dto.UpdatePaymentMethodDTO;
 import com.signature.autosave.modules.payment.method.service.PaymentMethodService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -13,7 +16,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,10 +46,11 @@ public class PaymentMethodController {
     }
 
     @GetMapping("methods")
-    public ResponseEntity<?> listPaymentMethods(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> listPaymentMethods(@AuthenticationPrincipal UserDetails userDetails,
+                                                @PageableDefault(size = 10, sort = "isDefault") Pageable pageable) {
 
         try{
-            List<PaymentMethodResponseDTO> result = paymentMethodService.listPaymentMethods(userDetails);
+            Page<PaymentMethodResponseDTO> result = paymentMethodService.listPaymentMethods(userDetails, pageable);
 
             return ResponseEntity.status(HttpStatus.FOUND).body(result);
 

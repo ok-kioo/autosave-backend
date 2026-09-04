@@ -46,7 +46,7 @@ public class CommentNodeController {
     public ResponseEntity<?> deleteComment(@PathVariable UUID id, @AuthenticationPrincipal UserDetails userDetails) {
         try {
             campaignNodeService.deleteComment(id, userDetails);
-            return ResponseEntity.ok(Map.of("message", "Comentário deletado com sucesso"));
+            return ResponseEntity.ok(Map.of("message", "Comment deleted"));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));

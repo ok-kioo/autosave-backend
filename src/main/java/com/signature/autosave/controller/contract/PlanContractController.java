@@ -6,13 +6,15 @@ import com.signature.autosave.modules.contract.dto.PlanContractResponseDTO;
 import com.signature.autosave.modules.contract.service.PlanContractService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -54,9 +56,10 @@ public class PlanContractController {
     }
 
     @GetMapping("")
-    public ResponseEntity<?> listPlanContracts(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> listPlanContracts(@AuthenticationPrincipal UserDetails userDetails,
+                                               @PageableDefault(size = 10, sort = "name") Pageable pageable) {
         try{
-            List<PlanContractResponseDTO> result = planContractService.listPlanContracts(userDetails);
+            Page<PlanContractResponseDTO> result = planContractService.listPlanContracts(userDetails, pageable);
 
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 

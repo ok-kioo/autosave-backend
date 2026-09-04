@@ -5,12 +5,14 @@ import com.signature.autosave.modules.email.campaign.dto.CreateEmailCampaignDTO;
 import com.signature.autosave.modules.email.campaign.dto.EmailCampaignResponseDTO;
 import com.signature.autosave.modules.email.campaign.service.EmailCampaignService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -32,9 +34,11 @@ public class EmailCampaignController {
     }
 
     @GetMapping
-    public ResponseEntity<?> listEmailCampaigns(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> listEmailCampaigns(@AuthenticationPrincipal UserDetails userDetails,
+                                                @PageableDefault(size = 10, sort = "createdAt") Pageable pageable,
+                                                @RequestParam(required = false) String searchTerm) {
         try {
-            List<EmailCampaignResponseDTO> result = emailCampaignService.listEmailCampaigns(userDetails);
+            Page<EmailCampaignResponseDTO> result = emailCampaignService.listEmailCampaigns(userDetails, pageable, searchTerm);
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 
         } catch (Exception e) {
@@ -43,9 +47,11 @@ public class EmailCampaignController {
     }
 
     @GetMapping("/available")
-    public ResponseEntity<?> listEmailCampaignsAvailable(@AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<?> listEmailCampaignsAvailable(@AuthenticationPrincipal UserDetails userDetails,
+                                                         @PageableDefault(size = 10, sort = "createdAt") Pageable pageable,
+                                                         @RequestParam(required = false) String searchTerm) {
         try {
-            List<EmailCampaignResponseDTO> result = emailCampaignService.listEmailCampaignsAvailable(userDetails);
+            Page<EmailCampaignResponseDTO> result = emailCampaignService.listEmailCampaignsAvailable(userDetails, pageable, searchTerm);
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 
         } catch (Exception e) {

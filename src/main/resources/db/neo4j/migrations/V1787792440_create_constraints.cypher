@@ -1,0 +1,11 @@
+CREATE CONSTRAINT user_id_unique IF NOT EXISTS
+FOR (u:User)
+REQUIRE u.id IS UNIQUE;
+
+CREATE CONSTRAINT campaign_id_unique IF NOT EXISTS
+FOR (c:Campaign)
+REQUIRE c.id IS UNIQUE;
+
+CREATE CONSTRAINT comment_id_unique IF NOT EXISTS
+FOR (c:Comment)
+REQUIRE c.id IS UNIQUE;

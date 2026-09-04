@@ -9,7 +9,7 @@ import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,20 +20,20 @@ import java.util.UUID;
 @Service
 public class UserService {
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
     private final ApplicationEventPublisher publisher;
 
     @Transactional
     public UserResponseDTO createUser(RegisterDTO registerDTO){
-        userRepository.findByEmail(registerDTO.getEmail()).ifPresent(user -> {
-            throw new IllegalArgumentException("Email já cadastrado");
+        userRepository.findByEmailAndIsActiveTrue(registerDTO.email()).ifPresent(user -> {
+            throw new IllegalArgumentException("Email already registered.");
         });
 
-        String encodedPassword = passwordEncoder.encode(registerDTO.getPassword());
+        String encodedPassword = passwordEncoder.encode(registerDTO.password());
 
         User user = UserBuilder.builder()
-                    .withName(registerDTO.getName())
-                    .withEmail(registerDTO.getEmail())
+                    .withName(registerDTO.name())
+                    .withEmail(registerDTO.email())
                     .withPassword(encodedPassword)
                     .build();
 
@@ -46,23 +46,24 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponseDTO list(UUID id){
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
+    @Transactional
     public UserResponseDTO updateUser(UpdateUserDTO updateUserDTO, UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        Optional.ofNullable(updateUserDTO.getEmail())
+        Optional.ofNullable(updateUserDTO.email())
                 .ifPresent(user::setEmail);
 
-        Optional.ofNullable(updateUserDTO.getName())
+        Optional.ofNullable(updateUserDTO.name())
                 .ifPresent(user::setName);
 
-        Optional.ofNullable(updateUserDTO.getPassword())
+        Optional.ofNullable(updateUserDTO.password())
                 .ifPresent(password -> user.setPassword(passwordEncoder.encode(password)));
 
         userRepository.save(user);
@@ -70,11 +71,12 @@ public class UserService {
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
     }
 
+    @Transactional
     public UserResponseDTO updateRoleUser(UpdateRoleUserDTO updateRoleUserDTO, UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
-        user.setRole(updateRoleUserDTO.getRole());
+        user.setRole(updateRoleUserDTO.role());
         userRepository.save(user);
 
         return new UserResponseDTO(user.getId(), user.getName(), user.getEmail(), user.getRole());
@@ -82,18 +84,18 @@ public class UserService {
 
     @Transactional
     public void deleteUser(DeleteUserDTO deleteUserDTO, UUID id, UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
 
         if (!user.getId().equals(id)) {
-            throw new IllegalArgumentException("Id do usuário não corresponde ao usuário autenticado");
+            throw new IllegalArgumentException("User Id does not match the authenticated user.");
         }
 
-        if(!user.getPassword().equals(deleteUserDTO.getPassword())){
-            throw new IllegalArgumentException("Senha incorreta");
+        if(!user.getPassword().equals(deleteUserDTO.password())){
+            throw new IllegalArgumentException("Wrong password.");
         }
 
-        userRepository.delete(user);
+        userRepository.setUserAsNonActive(user);
 
         publisher.publishEvent(new UserDeletedEvent(user.getId()));
     }

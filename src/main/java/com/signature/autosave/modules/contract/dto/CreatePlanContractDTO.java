@@ -1,17 +1,15 @@
 package com.signature.autosave.modules.contract.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
 
 import java.util.UUID;
 
-@Getter
-public class CreatePlanContractDTO {
-    @NotBlank
-    private UUID paymentMethod;
+public record CreatePlanContractDTO (@NotBlank
+                                     UUID paymentMethod,
 
-    private int installments;
+                                     int installments,
 
-    @NotBlank
-    private UUID subscriptionPlan;
+                                     @NotBlank
+                                     UUID subscriptionPlan) {
+
 }

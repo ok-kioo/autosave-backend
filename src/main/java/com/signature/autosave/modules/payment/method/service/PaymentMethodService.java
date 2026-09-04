@@ -5,7 +5,7 @@ import com.mercadopago.exceptions.MPApiException;
 import com.mercadopago.exceptions.MPException;
 import com.mercadopago.resources.customer.Customer;
 import com.mercadopago.resources.customer.CustomerCard;
-import com.signature.autosave.infra.components.intermediation.IIntermediationComponent;
+import com.signature.autosave.infra.components.intermediation.IGatewayComponent;
 import com.signature.autosave.modules.payment.method.builder.CreditCardPaymentMethodBuilder;
 import com.signature.autosave.modules.payment.method.builder.PaymentMethodBuilder;
 import com.signature.autosave.modules.payment.method.builder.PixPaymentMethodBuilder;
@@ -18,13 +18,16 @@ import com.signature.autosave.modules.payment.method.domain.repository.PixPaymen
 import com.signature.autosave.modules.payment.method.dto.*;
 import com.signature.autosave.modules.user.domain.entity.User;
 import com.signature.autosave.modules.user.domain.repository.UserRepository;
+import com.signature.autosave.modules.user.service.events.UserDeletedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -34,12 +37,12 @@ public class PaymentMethodService {
     private final PaymentMethodRepository paymentMethodRepository;
     private final CreditCardPaymentMethodRepository creditMethodRepository;
     private final PixPaymentMethodRepository pixMethodRepository;
-    private final IIntermediationComponent mpComponent;
+    private final IGatewayComponent gatewayComponent;
 
     @Transactional
     public PaymentMethodResponseDTO createPaymentMethod(RegisterPaymentMethodDTO registerPaymentMethod, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         if (registerPaymentMethod.isDefault()) {
             paymentMethodRepository.setPaymentMethodAsNonDefault(user.getId());
@@ -52,42 +55,41 @@ public class PaymentMethodService {
     }
 
     @Transactional(readOnly = true)
-    public List<PaymentMethodResponseDTO> listPaymentMethods(UserDetails userDetails) {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+    public Page<PaymentMethodResponseDTO> listPaymentMethods(UserDetails userDetails, Pageable pageable) {
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
-        return paymentMethodRepository.findAllByUserId(user.getId())
-                .stream()
+        return paymentMethodRepository.findAllByUserIdAndIsActiveTrue(user.getId(), pageable)
                 .map(method -> {
                     try {
                         return responseDTOBuild(method, user);
                     } catch (MPException | MPApiException e) {
                         throw new RuntimeException(e);
                     }
-                })
-                .toList();
+                });
     }
 
     @Transactional(readOnly = true)
     public PaymentMethodResponseDTO listPaymentMethod(UUID id, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
-        PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+        PaymentMethod paymentMethod = paymentMethodRepository.findByIdAndIsActiveTrue(id)
+                .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
         return responseDTOBuild(paymentMethod, user);
     }
 
+    @Transactional
     public PaymentMethodResponseDTO updatePaymentMethod(UUID id, UpdatePaymentMethodDTO updatePaymentMethodDTO, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
         if (!paymentMethod.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Você não tem permissão para atualizar este método de pagamento");
+            throw new RuntimeException("You do not have permission to update this payment method.");
         }
 
         if (updatePaymentMethodDTO.isDefault()) {
@@ -100,31 +102,36 @@ public class PaymentMethodService {
         return responseDTOBuild(paymentMethod, user);
     }
 
+    @Transactional
     public void deletePaymentMethod(UUID id, UserDetails userDetails) throws MPException, MPApiException {
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        User user = userRepository.findByEmailAndIsActiveTrue(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found."));
 
         PaymentMethod paymentMethod = paymentMethodRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
         if (!paymentMethod.getUser().getId().equals(user.getId())) {
-            throw new RuntimeException("Você não tem permissão para excluir este método de pagamento");
+            throw new RuntimeException("You do not have permission to delete this payment method.");
         }
 
         if (paymentMethod.isDefault()) {
-            throw new RuntimeException("Você não pode excluir o método de pagamento padrão");
+            throw new RuntimeException("You can not delete your default payment method.");
         }
 
         if(paymentMethod instanceof CreditCardPaymentMethod creditCardPaymentMethod){
-            paymentMethodRepository.delete(creditMethodRepository.findById(paymentMethod.getId())
-                .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado")));
+            creditMethodRepository.findById(paymentMethod.getId())
+                .orElseThrow(() -> new RuntimeException("Payment method not found."));
 
-            new CustomerCardClient().delete(creditCardPaymentMethod.getCustomerId(), creditCardPaymentMethod.getCustomerCardId());
+            paymentMethodRepository.setPaymentMethodAsNonActive(paymentMethod.getId());
+
+            //new CustomerCardClient().delete(creditCardPaymentMethod.getCustomerId(), creditCardPaymentMethod.getCustomerCardId());
         }
 
         if(paymentMethod instanceof PixPaymentMethod) {
-            paymentMethodRepository.delete(pixMethodRepository.findById(paymentMethod.getId())
-                    .orElseThrow(() -> new RuntimeException("Método de pagamento não encontrado")));
+            pixMethodRepository.findById(paymentMethod.getId())
+                    .orElseThrow(() -> new RuntimeException("Payment method not found."));
+
+            paymentMethodRepository.setPaymentMethodAsNonActive(paymentMethod.getId());
         }
     }
 
@@ -132,11 +139,11 @@ public class PaymentMethodService {
         if(registerPaymentMethodDTO.getGatewayPaymentMethodId() == null
             || registerPaymentMethodDTO.getGatewayToken() == null
             || registerPaymentMethodDTO.getGatewayIssuerId() == null) {
-            throw new RuntimeException("É necessário cadastrar o cartão com os campos token, issuerId e paymentMethodId preenchidos");
+            throw new RuntimeException("It is necessary to register the card with the token, issuerId, and paymentMethodId fields filled in.");
         }
 
-        Customer customer = mpComponent.createCustomer(registerPaymentMethodDTO);
-        CustomerCard customerCard = mpComponent.saveCreditCard(registerPaymentMethodDTO, customer);
+        Customer customer = gatewayComponent.createCustomer(registerPaymentMethodDTO);
+        CustomerCard customerCard = gatewayComponent.saveCreditCard(registerPaymentMethodDTO, customer);
 
         CreditCardPaymentMethod creditCard = CreditCardPaymentMethodBuilder.builder()
                 .withBase(basePaymentMethodBuild(registerPaymentMethodDTO, user))
@@ -161,7 +168,7 @@ public class PaymentMethodService {
     }
 
     private PixResponseDTO handlePixCreation(RegisterPaymentMethodDTO registerPaymentMethodDTO, User user) throws MPException, MPApiException {
-        Customer customer = mpComponent.createCustomer(registerPaymentMethodDTO);
+        Customer customer = gatewayComponent.createCustomer(registerPaymentMethodDTO);
 
         PixPaymentMethod pix = PixPaymentMethodBuilder.builder()
                         .withBase(basePaymentMethodBuild(registerPaymentMethodDTO, user))
@@ -210,7 +217,7 @@ public class PaymentMethodService {
                     user);
         }
 
-        throw new RuntimeException("Método de pagamento não encontrado ou você não tem permissão para acessá-lo");
+        throw new RuntimeException("Payment method not found or you do not have permission.");
     }
 
     private PaymentMethod basePaymentMethodBuild(RegisterPaymentMethodDTO registerPaymentMethodDTO, User user) {
@@ -223,5 +230,20 @@ public class PaymentMethodService {
                 .withCreatedAt(LocalDateTime.now())
                 .withIsDefault(registerPaymentMethodDTO.isDefault())
                 .withUser(user).build();
+    }
+
+    @EventListener
+    public void cascadeDeletePaymentMethods(UserDeletedEvent event) {
+
+        User user = userRepository.findById(event.userId())
+                .orElseThrow(() -> new RuntimeException("User not found."));
+
+        paymentMethodRepository
+                .findAllByUserIdAndIsActiveTrue(user.getId())
+                .forEach(paymentMethod ->
+                        paymentMethodRepository.setPaymentMethodAsNonActive(
+                                paymentMethod.getId()
+                        )
+                );
     }
 }

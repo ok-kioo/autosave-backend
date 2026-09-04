@@ -7,10 +7,7 @@ public enum BillingStatus {
     CANCELED ("CANCELED"),
     REFUNDED ("REFUNDED");
 
-    private final String status;
-
     BillingStatus(String status) {
-        this.status = status;
     }
 
 }

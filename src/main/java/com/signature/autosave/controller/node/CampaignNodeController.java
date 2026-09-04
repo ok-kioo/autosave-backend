@@ -6,6 +6,8 @@ import com.signature.autosave.modules.email.campaign.dto.node.RegisterCampaignNo
 import com.signature.autosave.modules.email.campaign.dto.node.ToggleLikeCampaignNodeDTO;
 import com.signature.autosave.modules.email.campaign.service.CampaignNodeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,7 +27,7 @@ public class CampaignNodeController {
     public ResponseEntity<?> registerView(@RequestBody RegisterCampaignNodeViewDTO registerCampaignNodeViewDTO, @AuthenticationPrincipal UserDetails userDetails) {
         try {
             campaignNodeService.registerView(registerCampaignNodeViewDTO, userDetails);
-            return ResponseEntity.ok(Map.of("message", "Visualização registrada"));
+            return ResponseEntity.ok(Map.of("message", "View registered"));
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));
@@ -66,9 +68,9 @@ public class CampaignNodeController {
     }
 
     @GetMapping("/comments/{id}")
-    public ResponseEntity<?> listComments(@PathVariable UUID id) {
+    public ResponseEntity<?> listComments(@PathVariable UUID id, @PageableDefault(size = 10) Pageable pageable) {
         try {
-            List<CommentThreadProjection> result = campaignNodeService.listComments(id);
+            List<CommentThreadProjection> result = campaignNodeService.listComments(id, pageable);
             return ResponseEntity.status(org.springframework.http.HttpStatus.FOUND).body(result);
 
         } catch (Exception e) {

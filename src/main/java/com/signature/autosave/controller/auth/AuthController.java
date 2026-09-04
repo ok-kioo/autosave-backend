@@ -30,7 +30,7 @@ public class AuthController {
         try{
             AuthResponseDTO result = authService.login(user);
 
-            return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of("User", result.getUser(), "Token", result.getToken()));
+            return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of("User", result.user(), "Token", result.token()));
 
         }catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage()));

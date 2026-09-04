@@ -14,10 +14,11 @@ import com.signature.autosave.modules.payment.payload.service.event.PayloadCreat
 import com.signature.autosave.modules.payment.payload.service.event.PayloadRefundEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,27 +32,27 @@ public class PayloadService {
     @Transactional(readOnly = true)
     public PayloadResponseDTO listPayload(UUID id){
         Payload payload = payloadRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Payload not found with id: " + id));
+            .orElseThrow(() -> new RuntimeException("Payload not found with id: " + id + "."));
 
         return new PayloadResponseDTO(
                 payload.getId(),
                 payload.getAmount(),
                 payload.getPaymentId(),
-                payload.getPayloadType(),
+                payload.getType(),
                 payload.getPlanContract());
     }
 
     @Transactional(readOnly = true)
-    public List<PayloadResponseDTO> listPayloads(){
-        return payloadRepository.findAll().stream()
+    public Page<PayloadResponseDTO> listPayloads(Pageable pageable) {
+        return payloadRepository.findAll(pageable)
                 .map(payload -> new PayloadResponseDTO(
                         payload.getId(),
                         payload.getAmount(),
                         payload.getPaymentId(),
-                        payload.getPayloadType(),
+                        payload.getType(),
                         payload.getPlanContract()
-                ))
-                .toList();    }
+                ));
+    }
 
     public void processPayload(Map<String, Object> payload) throws MPException, MPApiException {
         String type = (String) payload.get("type");
@@ -70,7 +71,7 @@ public class PayloadService {
     private void savePayload(Payment payment) {
         String status = payment.getStatus();
         PlanContract planContract = planContractRepository.findById(UUID.fromString(payment.getExternalReference()))
-                .orElseThrow(() -> new RuntimeException("PlanContract not found with id: " + payment.getExternalReference()));
+                .orElseThrow(() -> new RuntimeException("PlanContract not found with id: " + payment.getExternalReference() + "."));
 
         if ("approved".equals(status)) {
             handleApprovedPayment(payment, planContract);
@@ -82,12 +83,13 @@ public class PayloadService {
 
     }
 
+    @Transactional
     private void handleApprovedPayment(Payment payment, PlanContract planContract){
         Payload payload = new Payload();
         payload.setPaymentId(payment.getId());
         payload.setAmount(payment.getTransactionAmount());
         payload.setPaymentId(payment.getId());
-        payload.setPayloadType(PayloadType.PAYMENT);
+        payload.setType(PayloadType.PAYMENT);
         payload.setPlanContract(planContract);
 
         payloadRepository.save(payload);
@@ -95,12 +97,13 @@ public class PayloadService {
         publisher.publishEvent(new PayloadCreateEvent(planContract.getId()));
     }
 
+    @Transactional
     private void handleRefund(Payment payment, PlanContract planContract){
         Payload payload = new Payload();
         payload.setPaymentId(payment.getId());
         payload.setAmount(payment.getTransactionAmount());
         payload.setPaymentId(payment.getId());
-        payload.setPayloadType(PayloadType.REFUND);
+        payload.setType(PayloadType.REFUND);
         payload.setPlanContract(planContract);
 
         payloadRepository.save(payload);

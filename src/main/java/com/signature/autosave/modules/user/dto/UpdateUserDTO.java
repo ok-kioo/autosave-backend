@@ -2,15 +2,13 @@ package com.signature.autosave.modules.user.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
 
-@Getter
-public class UpdateUserDTO {
-    private String name;
+public record UpdateUserDTO(String name,
 
-    @Email
-    private String email;
+                            @Email
+                            String email,
 
-    @Size(min = 8)
-    private String password;
+                            @Size(min = 8)
+                            String password) {
+
 }

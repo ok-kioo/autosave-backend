@@ -31,6 +31,7 @@ public class PlanContract {
     @JoinColumn(name = "payment_method_id", referencedColumnName = "id")
     private PaymentMethod paymentMethod;
 
+    @Column(name = "contract_id")
     private String contractId;
 
     @NotNull
@@ -38,10 +39,12 @@ public class PlanContract {
     private BillingStatus status;
 
     @NotNull
+    @Column(name = "is_recurring")
     private Boolean isRecurring;
 
-    @Column(updatable = false)
+    @Column(name = "started_at", updatable = false)
     private LocalDate startedAt;
 
+    @Column(name = "ends_at")
     private LocalDate endsAt;
 }
